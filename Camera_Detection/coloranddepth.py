@@ -13,7 +13,7 @@ with pyrs.Service() as serv:
         dev.apply_ivcam_preset(0)
 
         cnt = 0
-        last = time.qtime()
+        last = time.time()
         smoothing = 0.9
         fps_smooth = 30
 

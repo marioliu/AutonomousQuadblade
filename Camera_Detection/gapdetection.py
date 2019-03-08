@@ -22,6 +22,8 @@ with pyrs.Service() as serv:
         width = 640
 
         times = []
+        sample_rate = 0.2
+        print('Sample rate: ' + str(sample_rate * 100) + '%')
 
         while True:
             t1 = time.time()
@@ -38,7 +40,6 @@ with pyrs.Service() as serv:
             # color
             c = dev.color
             c = cv2.cvtColor(c, cv2.COLOR_RGB2BGR)
-            gray = cv2.cvtColor(c, cv2.COLOR_BGR2GRAY)
 
             # detect gap
             # depth is in mm
@@ -47,18 +48,14 @@ with pyrs.Service() as serv:
             sample = [[0.0 for x in range(width)] for _ in range(height)]
             for x in range(width):
                 for y in range(height):
-                    if (y*width + x) % 100 == 0:
+                    if (y*width + x) % round(1/sample_rate) == 0:
                         sample[y][x] = depth[y][x]
-
-            # depth
-            # d = dev.depth * dev.depth_scale * 1000
-            # d = cv2.applyColorMap(d.astype(np.uint8), cv2.COLORMAP_RAINBOW)
 
             # sample
             d = np.array(sample) * dev.depth_scale * 1000
             d = cv2.applyColorMap(d.astype(np.uint8), cv2.COLORMAP_RAINBOW)
 
-            # join color and depth
+            # join color and sample
             cd = np.concatenate((c, d), axis=1)
 
             cv2.putText(cd, str(fps_smooth)[:4], (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0))
@@ -66,7 +63,7 @@ with pyrs.Service() as serv:
             cv2.imshow('', cd)
 
             t2 = time.time()
-            times.append(t2 - t1)
+            # times.append(t2 - t1)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 print(times)
