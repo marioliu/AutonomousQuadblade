@@ -8,9 +8,10 @@ import pyrealsense as pyrs
 
 
 with pyrs.Service() as serv:
-    with serv.Device() as dev:
+    with serv.Device(device_id=0, streams=[\
+                                        pyrs.stream.DepthStream(fps=60), pyrs.stream.ColorStream(fps=60)]) as dev:
 
-        dev.apply_ivcam_preset(0)
+        # dev.apply_ivcam_preset(0)
 
         cnt = 0
         last = time.time()

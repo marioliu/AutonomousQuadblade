@@ -1,7 +1,6 @@
 """
-Author: Jan Bernhard
-Last updated: 03/20/18
-Purpose: Gather sample RGB and depth images with the R200.
+Adapted from https://github.com/IntelligentQuadruped, with permission
+Description: Gathers sample RGB and depth images from the R200.
 """
 
 import numpy as np
