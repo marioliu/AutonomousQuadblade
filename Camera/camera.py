@@ -136,8 +136,10 @@ def main():
     time.sleep(2.5)
 
     t1 = time.time()
-    d = cam.getFrames(10)
-    print('Time to get 10 frames: ' + str(time.time() - t1))
+    numFrames = 10
+    d = cam.getFrames(numFrames)
+    printStmt = 'Time to get {0} frames: ' + str(time.time() - t1)
+    print(printStmt.format(numFrames))
     d_small = cam.reduceFrame(d, height_ratio = 0.0, sub_sample = 0.3)
 
     # colormap:
