@@ -138,10 +138,10 @@ def main():
     max_depth = 4.0
     numFrames = 10
     # height_ratio of 0 crops 0 rows away
-    height_ratio = 0.3
-    sub_sample = 0.5
+    height_ratio = 0.5
+    sub_sample = 1
     # reduce_to argument can be: 'lower', 'middle_lower', 'middle', 'middle_upper', and 'upper'
-    reduce_to = 'lower'
+    reduce_to = 'middle_lower'
 
     print('Program settings:')
     print('\tmax_depth: ' + str(max_depth))
@@ -173,7 +173,8 @@ def main():
     plt.grid()
 
     # original depth
-    ax1 = plt.subplot(2, 1, 1, sharex=ax2, sharey=ax2)
+    # plt.subplot(2, 1, 1, sharex=ax2, sharey=ax2)
+    plt.subplot(2, 1, 1)
     plt.imshow(d, cmap='gist_rainbow')
     plt.colorbar()
     plt.title('Original')
