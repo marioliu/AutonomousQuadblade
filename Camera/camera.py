@@ -92,7 +92,7 @@ class Camera:
 
     def reduceFrame(self, depth, height_ratio = 0.5, sub_sample = 0.3, reduce_to = 'lower'):
         """
-        Takes in a depth image and removes 0 and values bigger than max_depth, crops image to have last h rows, scales down by sub_sample
+        Takes in a depth image and removes 0 and values bigger than max_depth, crops image by h rows, scales down by sub_sample
 
         Args:
             height_ratio: Determines amount to crop away
@@ -101,24 +101,29 @@ class Camera:
 
         depth_copy = depth.copy()
         height = depth_copy.shape[0]
-        h = int(height_ratio*(height))
+        h_to_crop = int(height_ratio*(height))
+        cols_to_cut = 10
 
         if reduce_to == 'lower':
-            d_short = depth_copy[h:, 10:-10]
+            d_short = depth_copy[h_to_crop:, cols_to_cut:-cols_to_cut]
+
         elif reduce_to == 'middle_lower':
-            upper_brdr = 3*int(round((height-h)/4.0,0))
-            lower_brdr = upper_brdr + h
-            d_short = depth_copy[upper_brdr:lower_brdr, 10:-10]
+            upper_brdr = 3*int(round((height - h_to_crop)/4.0,0))
+            lower_brdr = upper_brdr + h_to_crop
+            d_short = depth_copy[upper_brdr:lower_brdr, cols_to_cut:-cols_to_cut]
+
         elif reduce_to == 'middle':
-            upper_brdr = int(round((height-h)/2.0,0))
-            lower_brdr = upper_brdr+h
-            d_short = depth_copy[upper_brdr:lower_brdr, 10:-10]
+            upper_brdr = int(round((height - h_to_crop)/2.0,0))
+            lower_brdr = upper_brdr + h_to_crop
+            d_short = depth_copy[upper_brdr:lower_brdr, cols_to_cut:-cols_to_cut]
+
         elif reduce_to == 'middle_upper':
-            upper_brdr = int(round((height-h)/4.0,0))
-            lower_brdr = upper_brdr+h
-            d_short = depth_copy[upper_brdr:lower_brdr, 10:-10]
+            upper_brdr = int(round((height - h_to_crop)/4.0,0))
+            lower_brdr = upper_brdr + h_to_crop
+            d_short = depth_copy[upper_brdr:lower_brdr, cols_to_cut:-cols_to_cut]
+
         elif reduce_to == 'upper':
-            d_short = depth_copy[:(height-h), 10:-10]
+            d_short = depth_copy[:(height - h_to_crop), cols_to_cut:-cols_to_cut]
 
         d_short[d_short <= 0] = np.nan
         d_short[d_short > self.max_depth] = np.nan
@@ -130,27 +135,51 @@ def main():
     """
     Unit tests
     """
+    max_depth = 4.0
+    numFrames = 10
+    # height_ratio of 0 crops 0 rows away
+    height_ratio = 0.3
+    sub_sample = 0.5
+    # reduce_to argument can be: 'lower', 'middle_lower', 'middle', 'middle_upper', and 'upper'
+    reduce_to = 'lower'
 
-    cam = Camera(max_depth = 4.0)
+    print('Program settings:')
+    print('\tmax_depth: ' + str(max_depth))
+    print('\tnumFrames: ' + str(numFrames))
+    print('\theight_ratio: ' + str(height_ratio))
+    print('\tsub_sample: ' + str(sub_sample))
+    print('\treduce_to: ' + reduce_to)
+
+    cam = Camera(max_depth = max_depth)
     cam.connect()
     time.sleep(2.5)
 
     t1 = time.time()
-    numFrames = 10
     d = cam.getFrames(numFrames)
-    printStmt = 'Time to get {0} frames: ' + str(time.time() - t1)
+    t2 = time.time()
+    printStmt = 'Time to get {0} frames: ' + str(t2 - t1)
     print(printStmt.format(numFrames))
-    d_small = cam.reduceFrame(d, height_ratio = 0.0, sub_sample = 0.3)
+    d_small = cam.reduceFrame(d, height_ratio = height_ratio, sub_sample = sub_sample, reduce_to = reduce_to)
 
     # colormap:
     # https://matplotlib.org/tutorials/colors/colormaps.html
-    plt.subplot(2, 1, 1)
-    plt.imshow(d, cmap='gist_rainbow')
-    plt.colorbar()
 
-    plt.subplot(2, 1, 2)
+    # scaled depth
+    plt.figure(figsize = (6, 7)) # figsize = width, height
+    ax2 = plt.subplot(2, 1, 2)
     plt.imshow(d_small, cmap='gist_rainbow')
     plt.colorbar()
+    plt.title('Scaled (height_ratio = {0}, sub_sample = {1})'.format(height_ratio, sub_sample))
+    plt.grid()
+
+    # original depth
+    ax1 = plt.subplot(2, 1, 1, sharex=ax2, sharey=ax2)
+    plt.imshow(d, cmap='gist_rainbow')
+    plt.colorbar()
+    plt.title('Original')
+    plt.grid()
+
+    plt.subplots_adjust(hspace = 0.3)
 
     plt.show()
     cam.disconnect()
