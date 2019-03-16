@@ -26,7 +26,7 @@ def plot2(figs, m1, m2, title1, title2):
         Nothing
     '''
     # figsize = width, height
-    figsize = (5.5, 6)
+    figsize = (6, 5.5)
     # colormap:
     # https://matplotlib.org/tutorials/colors/colormaps.html
 
@@ -62,6 +62,8 @@ def main():
     sub_sample = 0.3
     # reduce_to argument can be: 'lower', 'middle_lower', 'middle', 'middle_upper', and 'upper'
     reduce_to = 'middle_lower'
+    sigma = 0.2
+    max_h = 37
 
     cam = camera.Camera(max_depth = max_depth)
     cam.connect()
@@ -81,6 +83,8 @@ def main():
     print('\theight_ratio: ' + str(height_ratio))
     print('\tsub_sample: ' + str(sub_sample))
     print('\treduce_to: ' + reduce_to)
+    print('\tsigma: ' + str(sigma))
+    print('\tmax_h: ' + str(max_h))
 
     #######################################################
     # test algorithms and plot
@@ -100,7 +104,7 @@ def main():
 
     # adaptive grid sizing (recon)
     t1 = time.time()
-    recon = ags.depthCompletion(d_small, 0.2, 30)
+    recon = ags.depthCompletion(d_small, sigma, max_h)
     t2 = time.time()
     print('Time to do AGS: ' + str(t2 - t1))
 
@@ -110,7 +114,7 @@ def main():
     samples, measured_vector = si.createSamples(d_small, 0.01)
     t1 = time.time()
     rbf_pre = si.interpolateDepthImage(d_small.shape, samples, measured_vector)
-    rbf = ags.depthCompletion(rbf_pre, 0.2, 30)
+    rbf = ags.depthCompletion(rbf_pre, sigma, max_h)
     t2 = time.time()
     print('Time to do RBF and AGS: ' + str(t2 - t1))
 

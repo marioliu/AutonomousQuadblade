@@ -17,7 +17,7 @@ def setSigma(matrix, num=2):
     Default is a 3 sigma to get 95% of the values. 
     """
     x = matrix[matrix > 0].mean()
-    a,b = [0.07064656, -0.03890366]
+    a, b = [0.07064656, -0.03890366]
     sigma = a*x + b
     return num*round(sigma, 3)
 
@@ -27,25 +27,26 @@ def split(matrix):
     upper {left|middle|right} and lower {left|middle|right}.
 
     Arg:
-        matrix - numpy 2D depth matrix
+        matrix: numpy 2D depth matrix
     Returns:
         6 matrices in list
     """
-    h,w = matrix.shape
+    h, w = matrix.shape
     h_prime = int(h/2)
     w_prime = int(w/3)
 
     # quarter matrices
-    upper_left = matrix[:h_prime,:w_prime]
-    upper_middle = matrix[:h_prime,w_prime:2*w_prime]
-    upper_right = matrix[:h_prime,2*w_prime:w]
-    lower_left = matrix[h_prime:,:w_prime]
-    lower_middle = matrix[h_prime:,w_prime:2*w_prime]
-    lower_right = matrix[h_prime:,2*w_prime:w]
+    upper_left = matrix[:h_prime, :w_prime]
+    upper_middle = matrix[:h_prime, w_prime:2*w_prime]
+    upper_right = matrix[:h_prime, 2*w_prime:w]
+    lower_left = matrix[h_prime:, :w_prime]
+    lower_middle = matrix[h_prime:, w_prime:2*w_prime]
+    lower_right = matrix[h_prime:, 2*w_prime:w]
 
-    return [upper_left,upper_middle,upper_right,lower_left,lower_middle,lower_right]
+    return [upper_left, upper_middle, upper_right,\
+        lower_left, lower_middle, lower_right]
 
-def average(matrix, sigma, min_h):
+def average(matrix, sigma, max_h):
     """
     Assigns mean of all non-zero values to each gridcell given that the 
     standard deviations is within bounds and the quarters don't split below
@@ -54,16 +55,18 @@ def average(matrix, sigma, min_h):
     together.
 
     Args:
-        matrix - numpy 2D depth matrix
-        sigma - threshold value for standard deviation.
+        matrix: numpy 2D depth matrix
+        sigma: threshold value for standard deviation
+        max_h: maximum allowable height of averaged depth blocks
     Returns:
-        matrix - 2d depth matrix with approximated values.
+        matrix: 2d depth matrix with approximated values
     """
     h,w = matrix.shape
-    if matrix[matrix > 0].std() > sigma and h >= min_h:
+    # if depth values are all too different
+    if matrix[matrix > 0].std() > sigma and h >= max_h:
         submatrices = split(matrix)
         for i, submatrix in enumerate(submatrices):
-            submatrices[i] = average(submatrix, sigma, min_h)
+            submatrices[i] = average(submatrix, sigma, max_h)
         
         row1 = np.hstack((submatrices[0],submatrices[1],submatrices[2]))
         row2 = np.hstack((submatrices[3],submatrices[4],submatrices[5]))
@@ -71,6 +74,7 @@ def average(matrix, sigma, min_h):
         stacked = np.vstack((row1, row2))
         return stacked
 
+    # if depth values are all kind of close
     else:
         avg_depth_value = matrix[matrix > 0].mean()
         matrix = np.full((h,w), avg_depth_value)
@@ -109,14 +113,15 @@ def cleanup(matrix, n):
     
     return matrix
 
-def depthCompletion(d, min_sigma, min_h):
+def depthCompletion(d, min_sigma, max_h):
     """
     Manages the appropriate sequence of completion steps to determine a
     depth estimate for each matrix entry.
     
     Args:
-        matrix - depth values as np.array()
-        min_sigma - acceptable deviation within calculated depth fields
+        matrix: depth values as numpy array
+        min_sigma: acceptable deviation within calculated depth fields
+        max_h: maximum allowable height of averaged depth blocks
     """
 
     # Reduces outliers to a maximum value of 4.0 which is the max
@@ -126,8 +131,8 @@ def depthCompletion(d, min_sigma, min_h):
     # std = setSigma(matrix)
     # min_sigma = std if min_sigma < std else min_sigma
 
-    avg = average(depth, min_sigma, min_h)
-    clean = cleanup(avg, min_h/2)
+    avg = average(depth, min_sigma, max_h)
+    clean = cleanup(avg, max_h/2)
     return clean
 
 if __name__ == "__main__":
