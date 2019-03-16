@@ -1,3 +1,10 @@
+'''
+Author: Mario Liu
+Description: Module to detect faces with R200 camera.
+Adapted from
+https://docs.opencv.org/3.4.3/d7/d8b/tutorial_py_face_detection.html
+'''
+
 import logging
 logging.basicConfig(level=logging.INFO)
 
@@ -6,7 +13,7 @@ import numpy as np
 import cv2
 import pyrealsense as pyrs
 
-face_cascade = cv2.CascadeClassifier('/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml')
+face_cascade = cv2.CascadeClassifier('./haarcascade_frontalface_default.xml')
 
 with pyrs.Service() as serv:
     with serv.Device() as dev:

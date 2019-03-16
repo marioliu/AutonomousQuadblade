@@ -1,3 +1,9 @@
+'''
+Author: Mario Liu
+Description: Module to output color and depth images from R200 camera.
+Adapted from https://pyrealsense.readthedocs.io/en/master/examples.html
+'''
+
 import logging
 logging.basicConfig(level=logging.INFO)
 
