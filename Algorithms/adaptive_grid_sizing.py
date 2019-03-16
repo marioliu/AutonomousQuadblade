@@ -1,7 +1,10 @@
 '''
 Adapted from https://github.com/IntelligentQuadruped, with permission
 Description: Fills in gaps in the R200 depth camera output.
-Performance: Number of calculations increase as set standard-deviation (SIGMA) parameter decreases. A sigma of 450 allows a depth inaccuracy of 45cm.
+
+Performance: Number of calculations increase as set standard-deviation
+(SIGMA) parameter decreases. A sigma of 450 allows a depth inaccuracy of
+45cm.
 '''
 
 import numpy as np
@@ -18,15 +21,15 @@ def setSigma(matrix, num=2):
     sigma = a*x + b
     return num*round(sigma, 3)
 
-
 def split(matrix):
     """
-    Splits matrix into 4 equally sized rectangles.
+    Splits matrix into 6 equally sized rectangles:
+    upper {left|middle|right} and lower {left|middle|right}.
 
     Arg:
         matrix - numpy 2D depth matrix
     Returns:
-        4 matrix quarters as list
+        6 matrices in list
     """
     h,w = matrix.shape
     h_prime = int(h/2)
@@ -42,17 +45,17 @@ def split(matrix):
 
     return [upper_left,upper_middle,upper_right,lower_left,lower_middle,lower_right]
 
-
 def average(matrix, sigma, min_h):
     """
     Assigns mean of all non-zero values to each gridcell given that the 
-    standard deviations is within bounds and the quarters don't split below the 
-    minimum grid cell size. Inaccuracy is likely around 10%, sigma of up to 500, 
-    when images include multiple objects of different depths close together.
+    standard deviations is within bounds and the quarters don't split below
+    the minimum grid cell size. Inaccuracy is likely around 10%, sigma of up
+    to 500, when images include multiple objects of different depths close
+    together.
 
     Args:
         matrix - numpy 2D depth matrix
-        sigma - Threshold value for standard deviation.
+        sigma - threshold value for standard deviation.
     Returns:
         matrix - 2d depth matrix with approximated values.
     """
@@ -60,42 +63,57 @@ def average(matrix, sigma, min_h):
     if matrix[matrix > 0].std() > sigma and h >= min_h:
         submatrices = split(matrix)
         for i, submatrix in enumerate(submatrices):
-            submatrices[i] = average(submatrix,sigma, min_h)
+            submatrices[i] = average(submatrix, sigma, min_h)
         
-        horizontal1 = np.hstack((submatrices[0],submatrices[1],submatrices[2]))
-        horizontal2 = np.hstack((submatrices[3],submatrices[4],submatrices[5]))
-        stacked = np.vstack((horizontal1,horizontal2))
+        row1 = np.hstack((submatrices[0],submatrices[1],submatrices[2]))
+        row2 = np.hstack((submatrices[3],submatrices[4],submatrices[5]))
+
+        stacked = np.vstack((row1, row2))
         return stacked
 
     else:
-        ave_depth_value = matrix[matrix > 0].mean()
-        matrix = np.full((h,w), ave_depth_value)
+        avg_depth_value = matrix[matrix > 0].mean()
+        matrix = np.full((h,w), avg_depth_value)
         return matrix
 
 def cleanup(matrix, n):
     """
-    In case some grid cells are left with a 0.0 as mean-value. It assigns the value 
-    to the grid cell of the next non-zero gridcell. 
+    In case a grid cell is left with a 0.0 as mean value, this function
+    assigns the value of the next non-zero grid cell to it.
     """
-    x,y = np.where(np.isnan(matrix))
-    h,w = matrix.shape
-    for xc,yc in zip(x,y):
-        higher = [xc,yc]
-        lower = [xc,yc]
+    x, y = np.asarray(np.isnan(matrix)).nonzero()
+    w = len(matrix[0])
+    for xc, yc in zip(x, y):
+        higher = [xc, yc]
+        lower = [xc, yc]
+
+        pastBot = False
+        pastTop = False
         while(True):
             if higher[1] + n < w:
                 higher[1] = higher[1] + n
+            else:
+                pastBot = True
+
             if lower[1] - n > 0:
                 lower[1] = lower[1] - n
+            else:
+                pastTop = True
+
             if (not np.isnan(matrix[xc, higher[1]])) or (not np.isnan(matrix[xc, lower[1]])):
-                matrix[xc,yc] = matrix[xc, higher[1]] if not np.isnan(matrix[xc, higher[1]]) else matrix[lower[0], lower[1]]
+                matrix[xc, yc] = matrix[xc, higher[1]] if not np.isnan(matrix[xc, higher[1]]) else matrix[lower[0], lower[1]]
                 break
+
+            if pastBot and pastTop:
+                raise Exception('Depth camera\'s view is obstructed, scaled depth matrix is full of NaNs!')
+    
     return matrix
 
 def depthCompletion(d, min_sigma, min_h):
     """
-    Manages the appropriate sequence of completion steps to determine a depth 
-    estimate for each matrix entry. 
+    Manages the appropriate sequence of completion steps to determine a
+    depth estimate for each matrix entry.
+    
     Args:
         matrix - depth values as np.array()
         min_sigma - acceptable deviation within calculated depth fields
@@ -112,16 +130,15 @@ def depthCompletion(d, min_sigma, min_h):
     clean = cleanup(avg, min_h/2)
     return clean
 
-
 if __name__ == "__main__":
     """
     Application example with visualization.
     """
     import matplotlib.pyplot as plt
 
-    depth = 4*np.random.rand(5, 10)
-    depth[0, 5] = np.nan
-    depth[0, 6] = np.nan
+    depth = 4*np.random.rand(6, 10)
+    depth[1, 5] = np.nan
+    depth[1, 6] = np.nan
     depth[depth>4.0] = 0.0
 
     dep_comp = depthCompletion(depth, .01, 2)
@@ -131,6 +148,7 @@ if __name__ == "__main__":
     plt.subplot(2, 1, 2)
     plt.imshow(dep_comp)
     plt.show()
+
 else:
     np.warnings.filterwarnings('ignore')
 

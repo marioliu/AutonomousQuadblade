@@ -10,14 +10,51 @@ import matplotlib.pyplot as plt
 import time
 import scipy as sp
 
+def plot2(figs, m1, m2, title1, title2):
+    '''
+    Takes in two numpy matrices and plots them with a `gist_rainbow`
+    colormap.
+
+    Args:
+        figs: list to store figures in
+        m1: first numpy matrix to plot
+        m2: second numpy matrix to plot
+        title1: title of first plot
+        title2: title of second plot
+
+    Returns:
+        Nothing
+    '''
+    # figsize = width, height
+    figsize = (5.5, 6)
+    # colormap:
+    # https://matplotlib.org/tutorials/colors/colormaps.html
+
+    figs.append(plt.figure(figsize = figsize))
+    plt.subplot(2, 1, 1)
+    plt.imshow(m1, cmap='gist_rainbow')
+    plt.colorbar()
+    plt.title(title1)
+    plt.grid()
+
+    plt.subplot(2, 1, 2)
+    plt.imshow(m2, cmap='gist_rainbow')
+    plt.colorbar()
+    plt.title(title2)
+    plt.grid()
+
+    plt.subplots_adjust(hspace = 0.3)
+
+    figs[-1].show()
+
 def main():
     '''
-    Test each gap algorithm one by one.
+    Test each algorithm one by one.
     '''
 
-    '''
-    preprocessing and grabbing frames
-    '''
+    #######################################################
+    # preprocessing and grabbing frames
+    #######################################################
     max_depth = 4.0
     numFrames = 10
     # height_ratio of 0 crops 0 rows away
@@ -31,7 +68,7 @@ def main():
     time.sleep(2.5)
 
     t1 = time.time()
-    d = cam.getFrames(numFrames)
+    d, c = cam.getFrames(numFrames, rgb=True)
     t2 = time.time()
     cam.disconnect()
     printStmt = 'Time to get {0} frames: ' + str(t2 - t1)
@@ -44,59 +81,32 @@ def main():
     print('\theight_ratio: ' + str(height_ratio))
     print('\tsub_sample: ' + str(sub_sample))
     print('\treduce_to: ' + reduce_to)
-    
-    '''
-    regular cropping and resizing
-    '''
-    # colormap:
-    # https://matplotlib.org/tutorials/colors/colormaps.html
 
-    # scaled depth
-    fig1 = plt.figure(figsize = (6, 7)) # figsize = width, height
-    ax2 = plt.subplot(2, 1, 2)
-    plt.imshow(d_small, cmap='gist_rainbow')
-    plt.colorbar()
-    plt.title('Scaled (height_ratio = {0}, sub_sample = {1})'.format(height_ratio, sub_sample))
-    plt.grid()
+    #######################################################
+    # test algorithms and plot
+    #######################################################
+    # uncomment to plot original image
+    # fig0 = plt.figure()
+    # plt.imshow(c)
+    # plt.title('Color Image')
+    # plt.grid()
+    # fig0.show()
 
-    # original depth
-    # plt.subplot(2, 1, 1, sharex=ax2, sharey=ax2)
-    plt.subplot(2, 1, 1)
-    plt.imshow(d, cmap='gist_rainbow')
-    plt.colorbar()
-    plt.title('Original')
-    plt.grid()
+    figs = []
+    scaledTitle = 'Scaled (height_ratio = {0}, sub_sample = {1})'.format(height_ratio, sub_sample)
 
-    plt.subplots_adjust(hspace = 0.3)
+    # regular cropping and resizing
+    plot2(figs, d, d_small, 'Original', scaledTitle)
 
-    fig1.show()
-
-    '''
-    adaptive grid sizing (recon)
-    '''
+    # adaptive grid sizing (recon)
     t1 = time.time()
-    recon = ags.depthCompletion(d_small, 0.4, 20)
+    recon = ags.depthCompletion(d_small, 0.2, 30)
     t2 = time.time()
     print('Time to do AGS: ' + str(t2 - t1))
 
-    fig2 = plt.figure(figsize = (6, 7))
-    plt.subplot(2, 1, 1)
-    plt.imshow(d_small, cmap='gist_rainbow')
-    plt.colorbar()
-    plt.title('Scaled (height_ratio = {0}, sub_sample = {1})'.format(height_ratio, sub_sample))
-    plt.grid()
+    plot2(figs, d_small, recon, scaledTitle, 'Adaptive Grid Sizing (AGS) (Recon)')
 
-    plt.subplot(2, 1, 2)
-    plt.imshow(recon, cmap='gist_rainbow')
-    plt.colorbar()
-    plt.title('Adaptive Grid Sizing (AGS) (Recon)')
-    plt.grid()
-
-    fig2.show()
-
-    '''
-    radial basis function
-    '''
+    # radial basis function
     samples, measured_vector = si.createSamples(d_small, 0.01)
     t1 = time.time()
     rbf_pre = si.interpolateDepthImage(d_small.shape, samples, measured_vector)
@@ -104,26 +114,14 @@ def main():
     t2 = time.time()
     print('Time to do RBF and AGS: ' + str(t2 - t1))
 
-    fig3 = plt.figure(figsize = (6, 7))
-    plt.subplot(2, 1, 1)
-    plt.imshow(d_small, cmap='gist_rainbow')
-    plt.colorbar()
-    plt.title('Scaled (height_ratio = {0}, sub_sample = {1})'.format(height_ratio, sub_sample))
-    plt.grid()
+    plot2(figs, d_small, rbf, scaledTitle, 'RBF and AGS')
 
-    plt.subplot(2, 1, 2)
-    plt.imshow(rbf, cmap='gist_rainbow')
-    plt.colorbar()
-    plt.title('RBF and AGS')
-    plt.grid()
-
-    fig3.show()
-
-    # block plots until exited
-    plt.show()
+    # block plots until button is pressed
+    raw_input('Press <Enter> to close all plots and exit')
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
+        plt.close('all')
         print('\nCtrl-C was pressed, exiting...')
