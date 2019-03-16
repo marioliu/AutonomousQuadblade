@@ -8,6 +8,8 @@ from Algorithms import adaptive_grid_sizing as ags
 from Algorithms import sparse_interpolation as si
 import matplotlib.pyplot as plt
 import time
+import os
+import numpy as np
 import scipy as sp
 
 def plot2(figs, m1, m2, title1, title2):
@@ -47,10 +49,58 @@ def plot2(figs, m1, m2, title1, title2):
 
     figs[-1].show()
 
+def getFramesFromSource(source, numFrames=10):
+    '''
+    Gets frames from either a data directory or from the camera itself.
+
+    Args:
+        source: can be either a Camera object or a path to a directory of
+        .npy files
+
+    Returns:
+        One depth matrix and one color matrix
+    '''
+
+    # assuming source is a Camera object
+    try:
+        time.sleep(2.5)
+
+        t1 = time.time()
+        d, c = source.getFrames(numFrames, rgb=True)
+        t2 = time.time()
+        printStmt = 'Time to get {0} frames: ' + str(t2 - t1)
+        print(printStmt.format(numFrames))
+
+        return d, c
+    except:
+        pass
+
+    # assuming source is a directory of .npy files
+    try:
+        d = 0
+        c = 0
+        for i, file in enumerate(os.listdir(source)):
+            path = os.path.join(source, file)
+            frame = np.load(str(path))
+            if 'c' in file:
+                c = frame
+            else:
+                d = frame
+
+        return d, c
+    except:
+        raise Exception('source must a Camera object or a path to a directory of .npy files!')
+
 def main():
     '''
     Test each algorithm one by one.
     '''
+
+    cam = camera.Camera()
+    cam.connect()
+
+    # source = cam
+    source = './Camera/Sample_Data/16_Mar_2019'
 
     max_depth = 4.0
     numFrames = 10
@@ -61,20 +111,12 @@ def main():
     reduce_to = 'middle_lower'
     sigma = 0.2
     max_h = 30
-
-    cam = camera.Camera(max_depth = max_depth)
-    cam.connect()
-    time.sleep(2.5)
-
-    t1 = time.time()
-    d, c = cam.getFrames(numFrames, rgb=True)
-    t2 = time.time()
-    cam.disconnect()
-    printStmt = 'Time to get {0} frames: ' + str(t2 - t1)
-    print(printStmt.format(numFrames))
+    
+    d, c = getFramesFromSource(source, numFrames)
     d_small = cam.reduceFrame(d, height_ratio = height_ratio, sub_sample = sub_sample, reduce_to = reduce_to)
 
     print('Program settings:')
+    print('\tsource: ' + str(source))
     print('\tmax_depth: ' + str(max_depth))
     print('\tnumFrames: ' + str(numFrames))
     print('\theight_ratio: ' + str(height_ratio))

@@ -18,7 +18,7 @@ def ensureDir(file_path):
 	'''
 	if not os.path.exists(file_path):
 		os.makedirs(file_path)
-	print('Created path: {}'.format(file_path))
+		print('Created path: {}'.format(file_path))
 	return file_path
 
 def getRelativePath(src_path,dst_path):
