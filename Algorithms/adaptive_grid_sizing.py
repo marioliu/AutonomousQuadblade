@@ -1,13 +1,15 @@
 '''
 Adapted from https://github.com/IntelligentQuadruped, with permission
 Description: Fills in gaps in the R200 depth camera output.
-
+'''
+'''
 Performance: Number of calculations increase as set standard-deviation
 (SIGMA) parameter decreases. A sigma of 450 allows a depth inaccuracy of
 45cm.
 '''
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 def setSigma(matrix, num=2):
     """
@@ -61,7 +63,7 @@ def average(matrix, sigma, max_h):
     Returns:
         matrix: 2d depth matrix with approximated values
     """
-    h,w = matrix.shape
+    h, w = matrix.shape
     # if depth values are all too different
     if matrix[matrix > 0].std() > sigma and h >= max_h:
         submatrices = split(matrix)
@@ -72,40 +74,49 @@ def average(matrix, sigma, max_h):
         row2 = np.hstack((submatrices[3],submatrices[4],submatrices[5]))
 
         stacked = np.vstack((row1, row2))
+
         return stacked
 
     # if depth values are all kind of close
     else:
         avg_depth_value = matrix[matrix > 0].mean()
         matrix = np.full((h,w), avg_depth_value)
+
         return matrix
 
 def cleanup(matrix, n):
     """
     In case a grid cell is left with a 0.0 as mean value, this function
-    assigns the value of the next non-zero grid cell to it.
+    assigns the value of the closest (vertical) non-zero grid cell to it.
     """
     x, y = np.asarray(np.isnan(matrix)).nonzero()
     w = len(matrix[0])
     for xc, yc in zip(x, y):
-        higher = [xc, yc]
-        lower = [xc, yc]
+        higher = yc
+        lower = yc
 
         pastBot = False
         pastTop = False
+
         while(True):
-            if higher[1] + n < w:
-                higher[1] = higher[1] + n
+            if higher + n < w:
+                higher = higher + n
             else:
                 pastBot = True
 
-            if lower[1] - n > 0:
-                lower[1] = lower[1] - n
+            if lower - n > 0:
+                lower = lower - n
             else:
                 pastTop = True
 
-            if (not np.isnan(matrix[xc, higher[1]])) or (not np.isnan(matrix[xc, lower[1]])):
-                matrix[xc, yc] = matrix[xc, higher[1]] if not np.isnan(matrix[xc, higher[1]]) else matrix[lower[0], lower[1]]
+            botIsNan = np.isnan(matrix[xc, higher])
+            topIsNan = np.isnan(matrix[xc, lower])
+            if (not botIsNan) or (not topIsNan):
+                # fill in NaN cell
+                if not botIsNan:
+                    matrix[xc, yc] = matrix[xc, higher] 
+                else:
+                    matrix[xc, yc] = matrix[xc, lower]
                 break
 
             if pastBot and pastTop:
@@ -133,25 +144,37 @@ def depthCompletion(d, min_sigma, max_h):
 
     avg = average(depth, min_sigma, max_h)
     clean = cleanup(avg, max_h/2)
+
     return clean
 
 if __name__ == "__main__":
     """
     Application example with visualization.
     """
-    import matplotlib.pyplot as plt
+    h = 6
+    w = 9
 
-    depth = 4*np.random.rand(6, 10)
-    depth[1, 5] = np.nan
-    depth[1, 6] = np.nan
-    depth[depth>4.0] = 0.0
+    depth = 4 * np.random.rand(h, w)
+    for _ in range(5):
+        y, x = int(h * np.random.sample()), int(w * np.random.sample())
+        depth[y, x] = np.nan
 
     dep_comp = depthCompletion(depth, .01, 2)
 
+    figsize = (6, 5.5)
+    plt.figure(figsize = figsize)
+
     plt.subplot(2, 1, 1)
-    plt.imshow(depth)
+    plt.title('Original')
+    plt.imshow(depth, cmap='plasma')
+    plt.colorbar()
+
     plt.subplot(2, 1, 2)
-    plt.imshow(dep_comp)
+    plt.title('Filled-In Matrix')
+    plt.imshow(dep_comp, cmap='plasma')
+    plt.colorbar()
+
+    plt.subplots_adjust(hspace = 0.4)
     plt.show()
 
 else:

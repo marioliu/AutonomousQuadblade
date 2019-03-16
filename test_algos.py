@@ -52,9 +52,6 @@ def main():
     Test each algorithm one by one.
     '''
 
-    #######################################################
-    # preprocessing and grabbing frames
-    #######################################################
     max_depth = 4.0
     numFrames = 10
     # height_ratio of 0 crops 0 rows away
@@ -63,7 +60,7 @@ def main():
     # reduce_to argument can be: 'lower', 'middle_lower', 'middle', 'middle_upper', and 'upper'
     reduce_to = 'middle_lower'
     sigma = 0.2
-    max_h = 37
+    max_h = 30
 
     cam = camera.Camera(max_depth = max_depth)
     cam.connect()

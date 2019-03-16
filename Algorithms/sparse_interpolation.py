@@ -1,14 +1,15 @@
 '''
 Adapted from https://github.com/IntelligentQuadruped, with permission
 Description: Module used to interpolate values of depth matrix.
-'''
-'''
+
 Original paper: https://github.com/sparse-depth-sensing/sparse-depth-sensing
 '''
 
 import numpy as np
+import time
 from scipy import sparse
 from scipy.interpolate import Rbf
+import matplotlib.pyplot as plt
 
 def createSamples(depth, perc_samples):
 	"""
@@ -32,7 +33,6 @@ def createSamples(depth, perc_samples):
 
 	return samples, measured_vector
 
-
 def interpolateDepthImage(shape, samples, measured_vector):
 	"""
     Using just the original shape of depth image and random samples chosen,
@@ -51,33 +51,40 @@ def interpolateDepthImage(shape, samples, measured_vector):
 
 	return interpolated
 
-
-
 def main():
-	import matplotlib.pyplot as plt
+	h = 6
+	w = 9
 
+	depth = np.zeros((h, w))
+	depth.fill(np.nan)
+	for _ in range(int((h * w) / 3)):
+		y, x = int(h * np.random.sample()), int(w * np.random.sample())
+		depth[y, x] = 4.0 * np.random.sample()
 
-	depth = np.array([[np.nan, np.nan, 2, np.nan, 0, 1.2, np.nan, np.nan, 4], 
-					  [.3, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 3, np.nan],
-					  [np.nan, np.nan, 1, np.nan, np.nan, 0, np.nan, np.nan, np.nan],
-					  [.2, np.nan, np.nan, np.nan, 1, np.nan, 0, 4, np.nan]])
-
+	t1 = time.time()
 	samples, measured = createSamples(depth, 1)
-	interpolated = interpolateDepthImage(depth.shape, measured, samples)
-	print("done")
+	interpolated = interpolateDepthImage(depth.shape, samples, measured)
+	t2 = time.time()
+	print('Time to create samples and interpolate: ' + str(t2 - t1))
+
+	figsize = (6, 5.5)
+	plt.figure(figsize = figsize)
 
 	plt.subplot(2, 1, 1)
 	plt.title('Original')
-	plt.imshow(depth, cmap='viridis')
+	plt.imshow(depth, cmap='plasma')
+	plt.colorbar()
 	
 	plt.subplot(2, 1, 2)
 	plt.title('Interpolated')
-	plt.imshow(interpolated, cmap='viridis')
+	plt.imshow(interpolated, cmap='plasma')
+	plt.colorbar()
 
+	plt.subplots_adjust(hspace = 0.4)
 	plt.show()
 
 if __name__== "__main__":
-  main()
+	main()
 
 
 
