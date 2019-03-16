@@ -102,7 +102,3 @@ venv.bak/
 
 # mypy
 .mypy_cache/
-
-# sample data
-Camera/Sample_Data
-Camera/Sample_Data/*
