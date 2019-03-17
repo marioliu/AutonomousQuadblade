@@ -111,7 +111,7 @@ def main():
         print('Connected to R200 camera')
     elif argv[1] == 'data':
         print('Using data directory for frames')
-        source = './Camera/Sample_Data/16_Mar_2019'
+        source = './Camera/Sample_Data/17_Mar_2019'
     else:
         print('Usage: python {0} [cam|data]'.format(argv[0]))
         exit(1)
