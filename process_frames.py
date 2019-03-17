@@ -9,6 +9,8 @@ from Algorithms import sparse_interpolation as si
 import matplotlib.pyplot as plt
 import time
 import os
+import sys
+import platform
 import numpy as np
 import scipy as sp
 
@@ -93,17 +95,25 @@ def getFramesFromSource(source, numFrames=10):
 
 def main():
     '''
-    Test each algorithm one by one.
+    Tests each algorithm one by one.
     '''
+    argv = sys.argv
+    if len(argv) == 1:
+        print('Usage: python {0} [cam|data]'.format(argv[0]))
+        exit(1)
 
     cam = camera.Camera()
-    try:
+    source = None
+    if argv[1] == 'cam':
         cam.connect()
-    except:
-        print('Can\'t connect to R200 camera')
-
-    # source = cam
-    source = './Camera/Sample_Data/16_Mar_2019'
+        source = cam
+        print('Connected to R200 camera')
+    elif argv[1] == 'data':
+        print('Using data directory for frames')
+        source = './Camera/Sample_Data/16_Mar_2019'
+    else:
+        print('Usage: python {0} [cam|data]'.format(argv[0]))
+        exit(1)
 
     max_depth = 4.0
     numFrames = 10
