@@ -97,7 +97,10 @@ def main():
     '''
 
     cam = camera.Camera()
-    cam.connect()
+    try:
+        cam.connect()
+    except:
+        print('Can\'t connect to R200 camera')
 
     # source = cam
     source = './Camera/Sample_Data/16_Mar_2019'

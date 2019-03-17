@@ -15,8 +15,7 @@ from os import path, makedirs
 try:
     import pyrealsense as pyrs
 except ImportError as error:
-    print("Could not import pyrealsense")
-    logging.warning("cam.py: WARNING: " + str(error))
+    logging.warning("cam.py: " + str(error))
 
 class Camera:
     """
