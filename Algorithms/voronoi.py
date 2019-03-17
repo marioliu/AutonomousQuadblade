@@ -72,7 +72,7 @@ if __name__ == "__main__":
     Application example with visualization.
     """
     import matplotlib.pyplot as plt
-    import sparse_interpolation as si
+    import rbf_interpolation as rbfi
 
     # depth = np.array([[1, np.nan, 2, np.nan, 1, 1.2, np.nan, np.nan, 4], 
     #                   [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 3, np.nan],
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     # depth = np.vstack((depth, depth, depth, depth))
 
 
-    samples, measured = si.createSamples(depth, .2)
+    samples, measured = rbfi.createSamples(depth, .2)
     print(samples.shape)
 
     dep_comp = getVoronoi(depth.shape, samples, measured)

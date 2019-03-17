@@ -29,7 +29,7 @@ def split(matrix):
     upper {left|middle|right} and lower {left|middle|right}.
 
     Arg:
-        matrix: numpy 2D depth matrix
+        matrix: NumPy 2D depth matrix
     Returns:
         6 matrices in list
     """
@@ -57,11 +57,11 @@ def average(matrix, sigma, max_h):
     together.
 
     Args:
-        matrix: numpy 2D depth matrix
-        sigma: threshold value for standard deviation
-        max_h: maximum allowable height of averaged depth blocks
+        matrix: NumPy 2D depth matrix
+        sigma: Threshold value for standard deviation
+        max_h: Maximum allowable height of averaged depth blocks
     Returns:
-        matrix: 2d depth matrix with approximated values
+        matrix: 2D depth matrix with approximated values
     """
     h, w = matrix.shape
     # if depth values are all too different
@@ -130,9 +130,9 @@ def depthCompletion(d, min_sigma, max_h):
     depth estimate for each matrix entry.
     
     Args:
-        matrix: depth values as numpy array
-        min_sigma: acceptable deviation within calculated depth fields
-        max_h: maximum allowable height of averaged depth blocks
+        matrix: Depth values as NumPy array
+        min_sigma: Acceptable deviation within calculated depth fields
+        max_h: Maximum allowable height of averaged depth blocks
     """
 
     # Reduces outliers to a maximum value of 4.0 which is the max

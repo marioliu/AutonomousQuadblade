@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 import adaptive_grid_sizing as ags
 import voronoi
-import sparse_interpolation as si
+import rbf_interpolation as rbfi
 import obstacle_avoid as oa
 
 import time
@@ -35,22 +35,22 @@ class Navigation:
 
 
 		if algorithm_type == 'voronoi':
-			samples, measured_vector = si.createSamples(depth, perc_samples)
+			samples, measured_vector = rbfi.createSamples(depth, perc_samples)
 			if len(samples) <= 1:
 				return None
 			filled = voronoi.getVoronoi(depth.shape, samples, measured_vector)
 		elif algorithm_type == 'rbf':
-			samples, measured_vector = si.createSamples(depth, perc_samples)
+			samples, measured_vector = rbfi.createSamples(depth, perc_samples)
 			if len(samples) <= 1:
 				return None
-			filled = si.interpolateDepthImage(depth.shape,samples, measured_vector)
+			filled = rbfi.interpolateDepthImage(depth.shape,samples, measured_vector)
 		elif algorithm_type == 'ags_only':
 			filled = depth
 
 		adapted = ags.depthCompletion(filled, min_sigma, min_h)
 
 		if self.debug:
-			samples, measured_vector = si.createSamples(depth, perc_samples)
+			samples, measured_vector = rbfi.createSamples(depth, perc_samples)
 			sample_img = np.zeros((depth.shape)).flatten()
 			sample_img[samples] = depth.flatten()[samples]
 			sample_img = sample_img.reshape(depth.shape)

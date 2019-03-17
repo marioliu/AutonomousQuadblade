@@ -91,41 +91,53 @@ class Camera:
 
     def reduceFrame(self, depth, height_ratio = 0.5, sub_sample = 0.3, reduce_to = 'lower'):
         """
-        Takes in a depth image and removes 0 and values bigger than max_depth, crops image by h rows, scales down by sub_sample
+        Takes in a depth image and rescales it
 
         Args:
-            height_ratio: Determines amount to crop away
+            height_ratio: Determines fraction of rows to keep
             sub_sample: Scaling factor for image
         """
-
+        if (height_ratio > 1.0) or (height_ratio < 0.0)\
+            or (sub_sample > 1.0) or (sub_sample < 0.0):
+            print('height_ratio and sub_sample must be between 0 and 1')
+            exit(1)
+        
         depth_copy = depth.copy()
         height = depth_copy.shape[0]
-        h_to_crop = int(height_ratio*(height))
-        cols_to_cut = 10
+        h = int(height_ratio*(height))
+        cols_to_cut = 0
 
-        if reduce_to == 'lower':
-            d_short = depth_copy[h_to_crop:, cols_to_cut:-cols_to_cut]
+        if height_ratio == 1:
+            d_short = depth_copy
+
+        elif reduce_to == 'lower':
+            d_short = depth_copy[(height - h):,\
+                cols_to_cut:-(cols_to_cut+1)]
 
         elif reduce_to == 'middle_lower':
-            upper_brdr = 3*int(round((height - h_to_crop)/4.0,0))
-            lower_brdr = upper_brdr + h_to_crop
-            d_short = depth_copy[upper_brdr:lower_brdr, cols_to_cut:-cols_to_cut]
+            upper_brdr = int(3*(height/4.0) - h/2)
+            lower_brdr = upper_brdr + h
+            d_short = depth_copy[upper_brdr:lower_brdr,\
+                cols_to_cut:-(cols_to_cut+1)]
 
         elif reduce_to == 'middle':
-            upper_brdr = int(round((height - h_to_crop)/2.0,0))
-            lower_brdr = upper_brdr + h_to_crop
-            d_short = depth_copy[upper_brdr:lower_brdr, cols_to_cut:-cols_to_cut]
+            upper_brdr = int((height - h)/2.0)
+            lower_brdr = upper_brdr + h
+            d_short = depth_copy[upper_brdr:lower_brdr,\
+                cols_to_cut:-(cols_to_cut+1)]
 
         elif reduce_to == 'middle_upper':
-            upper_brdr = int(round((height - h_to_crop)/4.0,0))
-            lower_brdr = upper_brdr + h_to_crop
-            d_short = depth_copy[upper_brdr:lower_brdr, cols_to_cut:-cols_to_cut]
+            upper_brdr = int((height/4.0) - h/2)
+            lower_brdr = upper_brdr + h
+            d_short = depth_copy[upper_brdr:lower_brdr,\
+                cols_to_cut:-(cols_to_cut+1)]
 
         elif reduce_to == 'upper':
-            d_short = depth_copy[:(height - h_to_crop), cols_to_cut:-cols_to_cut]
+            d_short = depth_copy[:h, cols_to_cut:-(cols_to_cut+1)]
 
         d_short[d_short <= 0] = np.nan
         d_short[d_short > self.max_depth] = np.nan
+        
         rescaled = rescale(d_short, sub_sample, mode='reflect', multichannel=False, anti_aliasing=True)
 
         return rescaled

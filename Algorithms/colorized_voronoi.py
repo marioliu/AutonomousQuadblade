@@ -1,11 +1,6 @@
-"""
-@misc{col_vo,
-    title = {Colorized Voronoi diagram with Scipy, in 2D, including infinite regions},
-    howpublished = "\url{https://gist.github.com/pv/8036995}",
-    year = {2013}, 
-    note = "[Online; accessed 16-April-2018]"
-}
-"""
+'''
+Code adapted from https://gist.github.com/pv/8036995
+'''
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -94,32 +89,32 @@ def voronoi_finite_polygons_2d(vor, radius=None):
 
     return new_regions, np.asarray(new_vertices)
 
-# make up data points
-# np.random.seed(1234)
-# points = np.random.rand(15, 2)
+def main():
+    # make up data points
+    np.random.seed(1234)
+    points = np.random.rand(15, 2)
 
-# # compute Voronoi tesselation
-# vor = Voronoi(points)
+    # compute Voronoi tesselation
+    vor = Voronoi(points)
 
-# # plot
-# regions, vertices = voronoi_finite_polygons_2d(vor)
-# print "--"
-# print regions
-# print "--"
-# print vertices
+    # plot
+    regions, vertices = voronoi_finite_polygons_2d(vor)
+    # print "--"
+    # print regions
+    # print "--"
+    # print vertices
 
-# # colorize
-# for region in regions:
-#     polygon = vertices[region]
-#     plt.fill(*zip(*polygon), alpha=0.4)
+    # colorize
+    for region in regions:
+        polygon = vertices[region]
+        plt.fill(*zip(*polygon), alpha=0.4)
 
-# plt.plot(points[:,0], points[:,1], 'ko')
-# plt.axis('equal')
-# plt.xlim(vor.min_bound[0] - 0.1, vor.max_bound[0] + 0.1)
-# plt.ylim(vor.min_bound[1] - 0.1, vor.max_bound[1] + 0.1)
+    plt.plot(points[:,0], points[:,1], 'ko')
+    plt.axis('equal')
+    plt.xlim(vor.min_bound[0] - 0.1, vor.max_bound[0] + 0.1)
+    plt.ylim(vor.min_bound[1] - 0.1, vor.max_bound[1] + 0.1)
 
-# plt.savefig('voro.png')
-# plt.show()
+    plt.show()
 
-
-
+if __name__ == '__main__':
+    main()

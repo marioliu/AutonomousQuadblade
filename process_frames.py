@@ -5,7 +5,7 @@ Description: Module to test algorithms.
 
 from Camera import camera
 from Algorithms import adaptive_grid_sizing as ags
-from Algorithms import sparse_interpolation as si
+from Algorithms import rbf_interpolation as rbfi
 import matplotlib.pyplot as plt
 import time
 import os
@@ -20,11 +20,11 @@ def plot2(figs, m1, m2, title1, title2):
     colormap.
 
     Args:
-        figs: list to store figures in
-        m1: first numpy matrix to plot
-        m2: second numpy matrix to plot
-        title1: title of first plot
-        title2: title of second plot
+        figs: List to store figures in
+        m1: First numpy matrix to plot
+        m2: Second numpy matrix to plot
+        title1: Title of first plot
+        title2: Title of second plot
 
     Returns:
         Nothing
@@ -34,7 +34,8 @@ def plot2(figs, m1, m2, title1, title2):
     # colormap:
     # https://matplotlib.org/tutorials/colors/colormaps.html
 
-    figs.append(plt.figure(figsize = figsize))
+    fig = plt.figure(figsize = figsize)
+    figs.append(fig)
     plt.subplot(2, 1, 1)
     plt.imshow(m1, cmap='gist_rainbow')
     plt.colorbar()
@@ -56,8 +57,8 @@ def getFramesFromSource(source, numFrames=10):
     Gets frames from either a data directory or from the camera itself.
 
     Args:
-        source: can be either a Camera object or a path to a directory of
-        .npy files
+        source: Can be either a Camera object or a path to a
+        directory of .npy files
 
     Returns:
         One depth matrix and one color matrix
@@ -118,15 +119,13 @@ def main():
     max_depth = 4.0
     numFrames = 10
     # height_ratio of 0 crops 0 rows away
+    # default of h_r = 0.5, s_s = 0.3
     height_ratio = 0.5
     sub_sample = 0.3
     # reduce_to argument can be: 'lower', 'middle_lower', 'middle', 'middle_upper', and 'upper'
-    reduce_to = 'middle_lower'
+    reduce_to = 'middle'
     sigma = 0.2
     max_h = 30
-    
-    d, c = getFramesFromSource(source, numFrames)
-    d_small = cam.reduceFrame(d, height_ratio = height_ratio, sub_sample = sub_sample, reduce_to = reduce_to)
 
     print('Program settings:')
     print('\tsource: ' + str(source))
@@ -141,6 +140,9 @@ def main():
     #######################################################
     # test algorithms and plot
     #######################################################
+    d, c = getFramesFromSource(source, numFrames)
+    d_small = cam.reduceFrame(d, height_ratio = height_ratio, sub_sample = sub_sample, reduce_to = reduce_to)
+
     # uncomment to plot original image
     # fig0 = plt.figure()
     # plt.imshow(c)
@@ -158,19 +160,23 @@ def main():
     t1 = time.time()
     recon = ags.depthCompletion(d_small, sigma, max_h)
     t2 = time.time()
-    print('Time to do AGS: ' + str(t2 - t1))
 
+    print('Time to do AGS: ' + str(t2 - t1))
     plot2(figs, d_small, recon, scaledTitle, 'Adaptive Grid Sizing (AGS) (Recon)')
 
     # radial basis function
-    samples, measured_vector = si.createSamples(d_small, 0.01)
     t1 = time.time()
-    rbf_pre = si.interpolateDepthImage(d_small.shape, samples, measured_vector)
-    rbf = ags.depthCompletion(rbf_pre, sigma, max_h)
+    samples, measured_vector = rbfi.createSamples(d_small, 0.01)
+    rbf = rbfi.interpolateDepthImage(d_small.shape, samples, measured_vector)
     t2 = time.time()
-    print('Time to do RBF and AGS: ' + str(t2 - t1))
+    rbf_ags = ags.depthCompletion(rbf, sigma, max_h)
+    t3 = time.time()
 
-    plot2(figs, d_small, rbf, scaledTitle, 'RBF and AGS')
+    print('Time to do RBF: ' + str(t2 - t1))
+    plot2(figs, d_small, rbf, scaledTitle, 'RBF')
+
+    print('Time to do RBF and AGS: ' + str(t3 - t1))
+    plot2(figs, d_small, rbf_ags, scaledTitle, 'RBF and AGS')
 
     # block plots until button is pressed
     raw_input('Press <Enter> to close all plots and exit')
