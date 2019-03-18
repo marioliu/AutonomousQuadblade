@@ -107,6 +107,7 @@ class Camera:
         h = int(height_ratio*(height))
         cols_to_cut = 0
 
+        # catches the case when all rows are kept
         if height_ratio == 1:
             d_short = depth_copy
 

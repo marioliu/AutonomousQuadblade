@@ -86,8 +86,9 @@ def average(matrix, sigma, max_h):
 
 def cleanup(matrix, n):
     """
-    In case a grid cell is left with a 0.0 as mean value, this function
-    assigns the value of the closest (vertical) non-zero grid cell to it.
+    In case a grid cell is left with a NaN value, this function
+    assigns the value of the closest (vertical) non-zero/non-NaN
+    grid cell to it.
     """
     x, y = np.asarray(np.isnan(matrix)).nonzero()
     w = len(matrix[0])
@@ -118,9 +119,10 @@ def cleanup(matrix, n):
                 else:
                     matrix[xc, yc] = matrix[xc, lower]
                 break
-
+            # TODO: CHECK LEFT/RIGHT SO THIS DOESN'T GET STUCK IN LOOP
             if pastBot and pastTop:
-                raise Exception('Depth camera\'s view is obstructed, scaled depth matrix is full of NaNs!')
+                matrix[xc, yc] = np.nan
+                break
     
     return matrix
 
