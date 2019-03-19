@@ -124,8 +124,8 @@ def main():
     sub_sample = 0.3
     # reduce_to argument can be: 'lower', 'middle_lower', 'middle', 'middle_upper', and 'upper'
     reduce_to = 'middle_lower'
-    sigma = 0.2
-    iters = 3
+    sigma = 0.1
+    iters = 2
 
     print('Program settings:')
     print('\tsource: ' + str(source))

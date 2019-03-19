@@ -68,8 +68,12 @@ def _average(matrix, sigma, iters):
     """
     h, w = matrix.shape
 
+    nonNans = matrix[~np.isnan(matrix)]
+    if len(nonNans) == 0:
+        return matrix
+
     # if depth values are all too different
-    if matrix[matrix > 0].std() > sigma and iters > 0:
+    if nonNans.std() > sigma and iters > 0:
         submatrices = _split(matrix)
         for i, submatrix in enumerate(submatrices):
             submatrices[i] = _average(submatrix, sigma, iters - 1)
@@ -83,7 +87,7 @@ def _average(matrix, sigma, iters):
 
     # if depth values are all kind of close
     else:
-        avg_depth_value = matrix[matrix > 0].mean()
+        avg_depth_value = nonNans.mean()
         matrix = np.full((h, w), avg_depth_value)
 
         return matrix
@@ -151,11 +155,11 @@ def depthCompletion(d, min_sigma, iters):
     # std = _setSigma(matrix)
     # min_sigma = std if min_sigma < std else min_sigma
     
-    avg = _average(depth, min_sigma, iters)
     h = len(depth) / (2 ** iters)
     # catches the case where subdivisions get too small
     if h < 1:
         h = 1
+    avg = _average(depth, min_sigma, iters)
     clean = _cleanup(avg, h)
 
     return clean
@@ -168,11 +172,11 @@ if __name__ == "__main__":
     w = 9
 
     depth = 4 * np.random.rand(h, w)
-    for _ in range(5):
+    for _ in range(6):
         y, x = int(h * np.random.sample()), int(w * np.random.sample())
         depth[y, x] = np.nan
 
-    dep_comp = depthCompletion(depth, .01, 5)
+    dep_comp = depthCompletion(depth, .01, 8)
 
     figsize = (6, 5.5)
     plt.figure(figsize = figsize)
