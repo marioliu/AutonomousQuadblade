@@ -118,14 +118,14 @@ def main():
 
     max_depth = 4.0
     numFrames = 10
-    # height_ratio of 0 crops 0 rows away
+    # height_ratio of 1 keeps all rows of original image
     # default of h_r = 0.5, s_s = 0.3
     height_ratio = 0.5
     sub_sample = 0.3
     # reduce_to argument can be: 'lower', 'middle_lower', 'middle', 'middle_upper', and 'upper'
     reduce_to = 'middle_lower'
     sigma = 0.2
-    max_h = 30
+    iters = 3
 
     print('Program settings:')
     print('\tsource: ' + str(source))
@@ -135,7 +135,7 @@ def main():
     print('\tsub_sample: ' + str(sub_sample))
     print('\treduce_to: ' + reduce_to)
     print('\tsigma: ' + str(sigma))
-    print('\tmax_h: ' + str(max_h))
+    print('\titers: ' + str(iters))
 
     #######################################################
     # test algorithms and plot
@@ -158,7 +158,7 @@ def main():
 
     # adaptive grid sizing (recon)
     t1 = time.time()
-    recon = ags.depthCompletion(d_small, sigma, max_h)
+    recon = ags.depthCompletion(d_small, sigma, iters)
     t2 = time.time()
 
     print('Time to do AGS: ' + str(t2 - t1))
@@ -169,7 +169,7 @@ def main():
     samples, measured_vector = rbfi.createSamples(d_small, 0.01)
     rbf = rbfi.interpolateDepthImage(d_small.shape, samples, measured_vector)
     t2 = time.time()
-    rbf_ags = ags.depthCompletion(rbf, sigma, max_h)
+    rbf_ags = ags.depthCompletion(rbf, sigma, iters)
     t3 = time.time()
 
     print('Time to do RBF: ' + str(t2 - t1))

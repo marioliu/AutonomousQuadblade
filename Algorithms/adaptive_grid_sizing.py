@@ -11,7 +11,7 @@ Performance: Number of calculations increase as set standard-deviation
 import numpy as np
 import matplotlib.pyplot as plt
 
-def setSigma(matrix, num=2):
+def _setSigma(matrix, num=2):
     """
     Sets starting sigma value by interpolating from emperically
     determined data from R200 camera. 
@@ -23,7 +23,7 @@ def setSigma(matrix, num=2):
     sigma = a*x + b
     return num*round(sigma, 3)
 
-def split(matrix):
+def _split(matrix):
     """
     Splits matrix into 6 equally sized rectangles:
     upper {left|middle|right} and lower {left|middle|right}.
@@ -48,27 +48,36 @@ def split(matrix):
     return [upper_left, upper_middle, upper_right,\
         lower_left, lower_middle, lower_right]
 
-def average(matrix, sigma, max_h):
+def _average(matrix, sigma, iters, orig_h):
     """
-    Assigns mean of all non-zero values to each gridcell given that the 
-    standard deviations is within bounds and the quarters don't split below
-    the minimum grid cell size. Inaccuracy is likely around 10%, sigma of up
-    to 500, when images include multiple objects of different depths close
-    together.
+    Assigns mean of all non-zero/non-NaN values to each gridcell given
+    that the standard deviation is within bounds and the blocks are
+    smaller than the maximum allowable block height. Inaccuracy is likely
+    around 10%, sigma of up to 500, when images include multiple objects
+    of different depths close together.
 
     Args:
         matrix: NumPy 2D depth matrix
         sigma: Threshold value for standard deviation
-        max_h: Maximum allowable height of averaged depth blocks
+        iters: Divides matrix into a maximum of 2^iters vertical blocks
+        by subdividing matrix into halves with each successive iter.
+        (e.g. iter = 1, matrix is split in half; iter = 2, matrix is
+        split into quarters)
+        orig_h: Height of original depth matrix
     Returns:
         matrix: 2D depth matrix with approximated values
     """
     h, w = matrix.shape
+    if ((orig_h) / (2 ** iters)) < 2:
+        print('Make iters a smaller integer, can\'t divide matrix into' +
+            ' 2^iters subdivisions')
+        exit(1)
+
     # if depth values are all too different
-    if matrix[matrix > 0].std() > sigma and h >= max_h:
-        submatrices = split(matrix)
+    if matrix[matrix > 0].std() > sigma and iters > 0:
+        submatrices = _split(matrix)
         for i, submatrix in enumerate(submatrices):
-            submatrices[i] = average(submatrix, sigma, max_h)
+            submatrices[i] = _average(submatrix, sigma, iters - 1, orig_h)
         
         row1 = np.hstack((submatrices[0],submatrices[1],submatrices[2]))
         row2 = np.hstack((submatrices[3],submatrices[4],submatrices[5]))
@@ -80,15 +89,15 @@ def average(matrix, sigma, max_h):
     # if depth values are all kind of close
     else:
         avg_depth_value = matrix[matrix > 0].mean()
-        matrix = np.full((h,w), avg_depth_value)
+        matrix = np.full((h, w), avg_depth_value)
 
         return matrix
 
-def cleanup(matrix, n):
+def _cleanup(matrix, n):
     """
     In case a grid cell is left with a NaN value, this function
-    assigns the value of the closest (vertical) non-zero/non-NaN
-    grid cell to it.
+    assigns the value of the closest non-zero/non-NaN grid cell
+    to it.
     """
     x, y = np.asarray(np.isnan(matrix)).nonzero()
     w = len(matrix[0])
@@ -126,7 +135,7 @@ def cleanup(matrix, n):
     
     return matrix
 
-def depthCompletion(d, min_sigma, max_h):
+def depthCompletion(d, min_sigma, iters):
     """
     Manages the appropriate sequence of completion steps to determine a
     depth estimate for each matrix entry.
@@ -134,18 +143,28 @@ def depthCompletion(d, min_sigma, max_h):
     Args:
         matrix: Depth values as NumPy array
         min_sigma: Acceptable deviation within calculated depth fields
-        max_h: Maximum allowable height of averaged depth blocks
+        iters: Divides matrix into a maximum of 2^iters vertical blocks
+        by subdividing matrix into halves with each successive iter.
+        (e.g. iter = 1, matrix is split in half; iter = 2, matrix is
+        split into quarters)
     """
 
     # Reduces outliers to a maximum value of 4.0 which is the max
     # sensitivity value of the R200 depth sensors.
 
     depth = d.copy()
-    # std = setSigma(matrix)
+    # std = _setSigma(matrix)
     # min_sigma = std if min_sigma < std else min_sigma
 
-    avg = average(depth, min_sigma, max_h)
-    clean = cleanup(avg, max_h/2)
+    avg = _average(depth, min_sigma, iters, len(depth))
+
+    h = len(depth) / (2 ** iters)
+    blockSize = len(depth)
+    while blockSize > h:
+        blockSize = blockSize / 2
+    blockSize = int(blockSize)
+
+    clean = _cleanup(avg, blockSize)
 
     return clean
 
