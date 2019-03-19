@@ -48,7 +48,7 @@ def _split(matrix):
     return [upper_left, upper_middle, upper_right,\
         lower_left, lower_middle, lower_right]
 
-def _average(matrix, sigma, iters, orig_h):
+def _average(matrix, sigma, iters):
     """
     Assigns mean of all non-zero/non-NaN values to each gridcell given
     that the standard deviation is within bounds and the blocks are
@@ -63,21 +63,16 @@ def _average(matrix, sigma, iters, orig_h):
         by subdividing matrix into halves with each successive iter.
         (e.g. iter = 1, matrix is split in half; iter = 2, matrix is
         split into quarters)
-        orig_h: Height of original depth matrix
     Returns:
         matrix: 2D depth matrix with approximated values
     """
     h, w = matrix.shape
-    if ((orig_h) / (2 ** iters)) < 2:
-        print('Make iters a smaller integer, can\'t divide matrix into' +
-            ' 2^iters subdivisions')
-        exit(1)
 
     # if depth values are all too different
     if matrix[matrix > 0].std() > sigma and iters > 0:
         submatrices = _split(matrix)
         for i, submatrix in enumerate(submatrices):
-            submatrices[i] = _average(submatrix, sigma, iters - 1, orig_h)
+            submatrices[i] = _average(submatrix, sigma, iters - 1)
         
         row1 = np.hstack((submatrices[0],submatrices[1],submatrices[2]))
         row2 = np.hstack((submatrices[3],submatrices[4],submatrices[5]))
@@ -155,16 +150,13 @@ def depthCompletion(d, min_sigma, iters):
     depth = d.copy()
     # std = _setSigma(matrix)
     # min_sigma = std if min_sigma < std else min_sigma
-
-    avg = _average(depth, min_sigma, iters, len(depth))
-
+    
+    avg = _average(depth, min_sigma, iters)
     h = len(depth) / (2 ** iters)
-    blockSize = len(depth)
-    while blockSize > h:
-        blockSize = blockSize / 2
-    blockSize = int(blockSize)
-
-    clean = _cleanup(avg, blockSize)
+    # catches the case where subdivisions get too small
+    if h < 1:
+        h = 1
+    clean = _cleanup(avg, h)
 
     return clean
 
@@ -180,7 +172,7 @@ if __name__ == "__main__":
         y, x = int(h * np.random.sample()), int(w * np.random.sample())
         depth[y, x] = np.nan
 
-    dep_comp = depthCompletion(depth, .01, 2)
+    dep_comp = depthCompletion(depth, .01, 5)
 
     figsize = (6, 5.5)
     plt.figure(figsize = figsize)
