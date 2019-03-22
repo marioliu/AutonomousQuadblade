@@ -98,8 +98,9 @@ def _cleanup(matrix, n):
     assigns the value of the closest non-zero/non-NaN grid cell
     to it.
     """
-    x, y = np.asarray(np.isnan(matrix)).nonzero()
-    w = len(matrix[0])
+    y, x = np.asarray(np.isnan(matrix)).nonzero()
+    h = len(matrix)
+    
     for xc, yc in zip(x, y):
         higher = yc
         lower = yc
@@ -107,29 +108,30 @@ def _cleanup(matrix, n):
         pastBot = False
         pastTop = False
 
+        # fill top --> bottom first
         while(True):
-            if higher + n < w:
+            if higher + n < h:
                 higher = higher + n
             else:
                 pastBot = True
 
-            if lower - n > 0:
+            if lower - n >= 0:
                 lower = lower - n
             else:
                 pastTop = True
 
-            botIsNan = np.isnan(matrix[xc, higher])
-            topIsNan = np.isnan(matrix[xc, lower])
+            botIsNan = np.isnan(matrix[higher, xc])
+            topIsNan = np.isnan(matrix[lower, xc])
             if (not botIsNan) or (not topIsNan):
                 # fill in NaN cell
                 if not botIsNan:
-                    matrix[xc, yc] = matrix[xc, higher] 
+                    matrix[yc, xc] = matrix[higher, xc]
                 else:
-                    matrix[xc, yc] = matrix[xc, lower]
+                    matrix[yc, xc] = matrix[lower, xc]
                 break
-            # TODO: CHECK LEFT/RIGHT SO THIS DOESN'T GET STUCK IN LOOP
+            
             if pastBot and pastTop:
-                matrix[xc, yc] = np.nan
+                print('Cannot fill (y, x) = ' + str((yc, xc)))
                 break
     
     return matrix

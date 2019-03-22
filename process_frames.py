@@ -111,7 +111,7 @@ def main():
         print('Connected to R200 camera')
     elif argv[1] == 'data':
         print('Using data directory for frames')
-        source = './Camera/Sample_Data/18_Mar_2019'
+        source = './Camera/Sample_Data/17_Mar_2019'
     else:
         print('Usage: python {0} [cam|data]'.format(argv[0]))
         exit(1)
@@ -123,7 +123,7 @@ def main():
     height_ratio = 0.5
     sub_sample = 0.3
     # reduce_to argument can be: 'lower', 'middle_lower', 'middle', 'middle_upper', and 'upper'
-    reduce_to = 'middle_lower'
+    reduce_to = 'middle'
     sigma = 0.1
     iters = 2
 
