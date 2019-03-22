@@ -6,6 +6,7 @@ Description: Module to test algorithms.
 from Camera import camera
 from Algorithms import adaptive_grid_sizing as ags
 from Algorithms import rbf_interpolation as rbfi
+from Algorithms import voronoi as voro
 import matplotlib.pyplot as plt
 import time
 import os
@@ -162,12 +163,13 @@ def main():
     t2 = time.time()
 
     print('Time to do AGS: ' + str(t2 - t1))
+    print('')
     plot2(figs, d_small, recon, scaledTitle, 'Adaptive Grid Sizing (AGS) (Recon)')
 
     # radial basis function
     t1 = time.time()
     samples, measured_vector = rbfi.createSamples(d_small, 0.01)
-    rbf = rbfi.interpolateDepthImage(d_small.shape, samples, measured_vector)
+    rbf = rbfi.interpolate(d_small.shape, samples, measured_vector)
     t2 = time.time()
     rbf_ags = ags.depthCompletion(rbf, sigma, iters)
     t3 = time.time()
@@ -176,7 +178,23 @@ def main():
     plot2(figs, d_small, rbf, scaledTitle, 'RBF')
 
     print('Time to do RBF and AGS: ' + str(t3 - t1))
+    print('')
     plot2(figs, d_small, rbf_ags, scaledTitle, 'RBF and AGS')
+
+    # Voronoi interpolation
+    t1 = time.time()
+    samples, measured_vector = rbfi.createSamples(d_small, 0.01)
+    v = voro.getVoronoi(d_small.shape, samples, measured_vector)
+    t2 = time.time()
+    voro_ags = ags.depthCompletion(v, sigma, iters)
+    t3 = time.time()
+
+    print('Time to do Voronoi: ' + str(t2 - t1))
+    plot2(figs, d_small, v, scaledTitle, 'Voronoi')
+
+    print('Time to do Voronoi and AGS: ' + str(t3 - t1))
+    print('')
+    plot2(figs, d_small, voro_ags, scaledTitle, 'Voronoi and AGS')
 
     # block plots until button is pressed
     raw_input('Press <Enter> to close all plots and exit')

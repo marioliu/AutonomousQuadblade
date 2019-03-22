@@ -60,18 +60,18 @@ def createSamples(depth, perc_samples):
     # # for i in samples, takes the ith row from Rfull
     # R = Rfull.tocsr()[samples,:]
     # # scipy sparse matrix vector product, xGT is size n x 1
-    # measured_vector = R*xGT
+    # vec = R*xGT
 
     '''
     faster way of getting depth values at indices in samples
     '''
-    measured_vector = []
+    vec = []
     for i in samples:
-        measured_vector.append(xGT[i])
+        vec.append(xGT[i])
 
-    return samples, measured_vector
+    return samples, vec
 
-def interpolateDepthImage(shape, samples, measured_vector, ftype='linear'):
+def interpolate(shape, samples, vec, ftype='linear'):
     '''
     Constructs new depth image by interpolating known points. RBF
     is used to interpolate.
@@ -82,7 +82,7 @@ def interpolateDepthImage(shape, samples, measured_vector, ftype='linear'):
         samples: List of flattened indices of non-NaN values
         in depth matrix
 
-        measured_vector: List of depth values at the indices
+        vec: List of depth values at the indices
         given by the previous list
 
         ftype: Interpolation type given as str, these can be
@@ -103,7 +103,7 @@ def interpolateDepthImage(shape, samples, measured_vector, ftype='linear'):
     Y_sample = Yq.flatten()[samples]
     Z_sample = Zq.flatten()[samples]
 
-    rbfi = Rbf(Y_sample, Z_sample, measured_vector, function=ftype)
+    rbfi = Rbf(Y_sample, Z_sample, vec, function=ftype)
     interpolated = rbfi(Yq, Zq)
 
     return interpolated
@@ -121,7 +121,7 @@ def main():
 
     t1 = time.time()
     samples, measured = createSamples(depth, perc_samples)
-    interpolated = interpolateDepthImage(depth.shape, samples, measured)
+    interpolated = interpolate(depth.shape, samples, measured)
     t2 = time.time()
     print('Time to create samples and interpolate: ' + str(t2 - t1))
 
@@ -134,7 +134,7 @@ def main():
     plt.colorbar()
     
     plt.subplot(2, 1, 2)
-    plt.title('Interpolated')
+    plt.title('RBF Interpolated')
     plt.imshow(interpolated, cmap='plasma')
     plt.colorbar()
 

@@ -1,20 +1,33 @@
 '''
-Author: Viveque Ramji
-
+Adapted from https://github.com/IntelligentQuadruped, with permission
+Description: Module used to interpolate values of depth matrix using
+Voronoi interpolation.
 '''
 
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi
-from shapely.geometry import Polygon    
+from shapely.geometry import Polygon
 from matplotlib.path import Path
 from colorized_voronoi import voronoi_finite_polygons_2d
 
-
 def getVoronoi(shape, samples, vec):
-    h,w = shape
-    mask = np.where(vec != 0)
-    samples = samples[mask]
-    vec = vec[mask]
+    '''
+    Constructs new depth image by creating Voronoi regions.
+    
+    Args:
+        shape: Shape of the depth matrix
+
+        samples: List of flattened indices of non-NaN values
+        in depth matrix
+
+        vec: List of depth values at the indices
+        given by the previous list
+
+    Returns:
+        matrix: New depth matrix
+    '''
+    h, w = shape
 
     he = np.arange(0, h)
     wi = np.arange(0, w)
@@ -66,34 +79,44 @@ def getVoronoi(shape, samples, vec):
 
     return reconstructed.T
 
-
-if __name__ == "__main__":
+def main():
     """
     Application example with visualization.
     """
-    import matplotlib.pyplot as plt
     import rbf_interpolation as rbfi
+    import time
 
-    # depth = np.array([[1, np.nan, 2, np.nan, 1, 1.2, np.nan, np.nan, 4], 
-    #                   [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 3, np.nan],
-    #                   [np.nan, np.nan, 1, np.nan, np.nan, 1, np.nan, np.nan, np.nan],
-    #                   [.2, np.nan, np.nan, np.nan, 1, np.nan, 1, 4, np.nan]])
-    depth = 5*np.random.rand(10, 10)
-    # depth = np.vstack((depth, depth, depth, depth))
+    h = 6
+    w = 9
+    perc_samples = 1
 
+    depth = np.zeros((h, w))
+    depth.fill(np.nan)
+    for _ in range(int((h * w) / 3)):
+        y, x = int(h * np.random.sample()), int(w * np.random.sample())
+        depth[y, x] = 4.0 * np.random.sample()
 
-    samples, measured = rbfi.createSamples(depth, .2)
-    print(samples.shape)
+    t1 = time.time()
+    samples, measured = rbfi.createSamples(depth, perc_samples)
+    interpolated = getVoronoi(depth.shape, samples, measured)
+    t2 = time.time()
+    print('Time to create samples and get Voronoi: ' + str(t2 - t1))
 
-    dep_comp = getVoronoi(depth.shape, samples, measured)
+    figsize = (6, 5.5)
+    plt.figure(figsize = figsize)
 
     plt.subplot(2, 1, 1)
-    plt.imshow(depth)
+    plt.title('Original')
+    plt.imshow(depth, cmap='plasma')
+    plt.colorbar()
+    
     plt.subplot(2, 1, 2)
-    plt.imshow(dep_comp)
+    plt.title('Voronoi Regions')
+    plt.imshow(interpolated, cmap='plasma')
+    plt.colorbar()
+
+    plt.subplots_adjust(hspace = 0.4)
     plt.show()
 
-
-
-
-
+if __name__ == "__main__":
+    main()
