@@ -1,19 +1,58 @@
 '''
 Author: Mario Liu
-Description: Module to test algorithms.
+Description: Helper module for retrieving and showing data.
 '''
 
-from Camera import camera
-from Algorithms import adaptive_grid_sizing as ags
-from Algorithms import rbf_interpolation as rbfi
-from Algorithms import voronoi as voro
-import matplotlib.pyplot as plt
 import time
 import os
-import sys
-import platform
 import numpy as np
-import scipy as sp
+import matplotlib.pyplot as plt
+
+def getFramesFromSource(source, numFrames=10):
+    '''
+    Gets frames from either a data directory or from the camera itself.
+
+    Args:
+        source: Can be either a Camera object or a path to a
+        directory of .npy files
+
+    Returns:
+        One depth matrix and one color matrix
+    '''
+
+    # assuming source is a Camera object
+    try:
+        time.sleep(2.5)
+
+        t1 = time.time()
+        d, c = source.getFrames(numFrames, rgb=True)
+        t2 = time.time()
+        printStmt = 'Time to get {0} frames: ' + str(t2 - t1)
+        print(printStmt.format(numFrames))
+
+        return d, c
+    except:
+        pass
+
+    # assuming source is a directory of .npy files
+    try:
+        d = 0
+        c = 0
+        for i, file in enumerate(os.listdir(source)):
+            path = os.path.join(source, file)
+            frame = np.load(str(path))
+
+            if 'c.npy' in file:
+                c = frame
+            elif 'd.npy' in file:
+                d = frame
+            else:
+                print('Directory does not contain properly formatted .npy files')
+                exit(1)
+
+        return d, c
+    except:
+        raise Exception('source must a Camera object or a path to a directory of .npy files!')
 
 def plot2(figs, m1, m2, title1, title2):
     '''
@@ -53,52 +92,17 @@ def plot2(figs, m1, m2, title1, title2):
 
     figs[-1].show()
 
-def getFramesFromSource(source, numFrames=10):
-    '''
-    Gets frames from either a data directory or from the camera itself.
-
-    Args:
-        source: Can be either a Camera object or a path to a
-        directory of .npy files
-
-    Returns:
-        One depth matrix and one color matrix
-    '''
-
-    # assuming source is a Camera object
-    try:
-        time.sleep(2.5)
-
-        t1 = time.time()
-        d, c = source.getFrames(numFrames, rgb=True)
-        t2 = time.time()
-        printStmt = 'Time to get {0} frames: ' + str(t2 - t1)
-        print(printStmt.format(numFrames))
-
-        return d, c
-    except:
-        pass
-
-    # assuming source is a directory of .npy files
-    try:
-        d = 0
-        c = 0
-        for i, file in enumerate(os.listdir(source)):
-            path = os.path.join(source, file)
-            frame = np.load(str(path))
-            if 'c' in file:
-                c = frame
-            else:
-                d = frame
-
-        return d, c
-    except:
-        raise Exception('source must a Camera object or a path to a directory of .npy files!')
-
 def main():
     '''
     Tests each algorithm one by one.
     '''
+    import sys
+    from Camera import camera
+    from Algorithms import adaptive_grid_sizing as ags
+    from Algorithms import rbf_interpolation as rbfi
+    from Algorithms import voronoi as voro
+    from Algorithms import create_samples as cs
+
     argv = sys.argv
     if len(argv) == 1:
         print('Usage: python {0} [cam|data]'.format(argv[0]))
@@ -168,7 +172,7 @@ def main():
 
     # radial basis function
     t1 = time.time()
-    samples, measured_vector = rbfi.createSamples(d_small, 0.01)
+    samples, measured_vector = cs.createSamples(d_small, 0.01)
     rbf = rbfi.interpolate(d_small.shape, samples, measured_vector)
     t2 = time.time()
     rbf_ags = ags.depthCompletion(rbf, sigma, iters)
@@ -183,7 +187,7 @@ def main():
 
     # Voronoi interpolation
     t1 = time.time()
-    samples, measured_vector = rbfi.createSamples(d_small, 0.01)
+    samples, measured_vector = cs.createSamples(d_small, 0.01)
     v = voro.getVoronoi(d_small.shape, samples, measured_vector)
     t2 = time.time()
     voro_ags = ags.depthCompletion(v, sigma, iters)

@@ -24,6 +24,9 @@ def getVoronoi(shape, samples, vec):
         vec: List of depth values at the indices
         given by the previous list
 
+        * NOTE: samples and vec must be obtained from the function
+        create_samples.createSamples()
+
     Returns:
         matrix: New depth matrix
     '''
@@ -83,8 +86,8 @@ def main():
     """
     Application example with visualization.
     """
-    import rbf_interpolation as rbfi
     import time
+    from create_samples import createSamples
 
     h = 6
     w = 9
@@ -97,8 +100,8 @@ def main():
         depth[y, x] = 4.0 * np.random.sample()
 
     t1 = time.time()
-    samples, measured = rbfi.createSamples(depth, perc_samples)
-    interpolated = getVoronoi(depth.shape, samples, measured)
+    samples, vec = createSamples(depth, perc_samples)
+    interpolated = getVoronoi(depth.shape, samples, vec)
     t2 = time.time()
     print('Time to create samples and get Voronoi: ' + str(t2 - t1))
 
