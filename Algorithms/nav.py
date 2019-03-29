@@ -1,122 +1,129 @@
 '''
-Author: Viveque Ramji
-Purpose: Module to clean camera data and provide an open direction to move in
-
+Adapted from https://github.com/IntelligentQuadruped, with permission
+Description: Module to clean camera data and provide a direction to
+move in.
 '''
 import numpy as np
 from scipy import sparse
 import matplotlib.pyplot as plt
-
 import adaptive_grid_sizing as ags
 import voronoi
 import rbf_interpolation as rbfi
+from create_samples import createSamples
 import obstacle_avoid as oa
-
 import time
 import logging
 
 class Navigation:
-	"""
+    """
     Object to use depth images to find gap to move in to.
     """
 
-	def __init__(self, debug=False):
-		"""
-	    Intitalize Navigation module
-	    """
-		self.debug = debug
+    def __init__(self, debug=False):
+        """
+        Intitalize Navigation module
+        """
+        self.debug = debug
 
+    def reconstructFrame(self, depth, perc_samples=0.01, min_sigma=0.3, iters=3, alg_type='rbf'):
+        """
+        Given a partial depth image, will return a reconstructed version filling
+        in all missing data.
+        """
+        samples, measured_vector = createSamples(depth, perc_samples)
 
-	def reconstructFrame(self, depth, perc_samples=0.005, min_sigma=0.5, min_h=10, algorithm_type='voronoi'):
-		"""
-	    Givena partial depth image, will return an interpolated version filling
-	    all missing data.
-	    """
+        if alg_type == 'voronoi':
+            if len(samples) <= 1:
+                return None
+            filled = voronoi.getVoronoi(depth.shape, samples, measured_vector)
+        elif alg_type == 'rbf':
+            if len(samples) <= 1:
+                return None
+            filled = rbfi.interpolate(depth.shape,samples, measured_vector)
+        elif alg_type == 'ags_only':
+            filled = depth
 
+        adapted = ags.depthCompletion(filled, min_sigma, iters)
 
-		if algorithm_type == 'voronoi':
-			samples, measured_vector = rbfi.createSamples(depth, perc_samples)
-			if len(samples) <= 1:
-				return None
-			filled = voronoi.getVoronoi(depth.shape, samples, measured_vector)
-		elif algorithm_type == 'rbf':
-			samples, measured_vector = rbfi.createSamples(depth, perc_samples)
-			if len(samples) <= 1:
-				return None
-			filled = rbfi.interpolateDepthImage(depth.shape,samples, measured_vector)
-		elif algorithm_type == 'ags_only':
-			filled = depth
+        if self.debug:
+            sample_img = np.zeros((depth.shape)).flatten()
+            sample_img.fill(np.nan)
+            sample_img[samples] = depth.flatten()[samples]
+            sample_img = sample_img.reshape(depth.shape)
 
-		adapted = ags.depthCompletion(filled, min_sigma, min_h)
+            return sample_img, filled, adapted
+        
+        return adapted
+    
+    def obstacleAvoid(self, depth, max_dist=1.2, barrier_h=.5):
+        """
+        Given a depth image and a threshold value, will find the largest gap
+        that can be used, returning the fraction along the images width where
+        this is and the degrees rotation from the center. 
+        """
+        pos = oa.findLargestGap(depth, max_dist, barrier_h, DEBUG=self.debug)
+        return pos
 
-		if self.debug:
-			samples, measured_vector = rbfi.createSamples(depth, perc_samples)
-			sample_img = np.zeros((depth.shape)).flatten()
-			sample_img[samples] = depth.flatten()[samples]
-			sample_img = sample_img.reshape(depth.shape)
+    def plot(self, depth, sample_img, filled, ags, cmap='plasma', b=True):
+        """
+        Will plot the original depth, interpolated depth, and the
+        position of where the algorithm recommends to move.
+        """
+        plt.figure(figsize=(7, 5.5))
+        plt.subplot(2, 2, 1)
+        plt.title('Depth')
+        plt.imshow(depth, cmap=cmap)
+        plt.xticks(visible=False)
+        plt.yticks(visible=False)
+        plt.colorbar()
 
-			self.plot(depth, sample_img, filled, adapted)
+        plt.subplot(2, 2, 2)
+        plt.imshow(sample_img, cmap=cmap)
+        plt.title('Samples')
+        plt.xticks(visible=False)
+        plt.yticks(visible=False)
+        plt.colorbar()
 
-		return adapted
-	def obstacleAvoid(self, depth, max_dist=1.2,barrier_h=.5):
-		"""
-	    Given a depth image and a threshold value, will find the largest gap
-	    that can be used, returning the fraction along the images width where
-	    this is and the degrees rotation from the center. 
-	    """
-		pos = oa.findLargestGap(depth, max_dist, barrier_h,DEBUG=self.debug)
-		return pos
+        plt.subplot(2, 2, 3)
+        plt.imshow(filled, cmap=cmap)
+        plt.title('RBF or Voronoi')
+        plt.xticks(visible=False)
+        plt.yticks(visible=False)
+        plt.colorbar()
 
-	def plot(self, depth, sample_img, filled, ags, cmap='viridis', b=True):
-		"""
-	    Will plot the rgb image, original depth, interpolated depth and the
-	    position of where the algorithm recommends to move.
-	    """
-		plt.subplot(2, 2, 1)
-		plt.title('Depth')
-		plt.imshow(depth)
-		plt.xticks(visible=False)
-		plt.yticks(visible=False)
+        plt.subplot(2, 2, 4)
+        plt.imshow(ags, cmap=cmap)
+        plt.title('RBF + AGS')
+        plt.xticks(visible=False)
+        plt.yticks(visible=False)
+        plt.colorbar()
 
-		plt.subplot(2, 2, 2)
-		plt.imshow(sample_img, cmap=cmap)
-		plt.title('Samples')
-		plt.xticks(visible=False)
-		plt.yticks(visible=False)
+        plt.subplots_adjust(bottom=0.1, right=0.9, top=0.9, left=0.125)
+        # cax = plt.axes([0.85, 0.1, 0.075, 0.8])
+        # plt.colorbar(cax=cax)
 
-		plt.subplot(2, 2, 3)
-		plt.imshow(filled, cmap=cmap)
-		plt.title('RBF, Voronoi, or None')
-		plt.xticks(visible=False)
-		plt.yticks(visible=False)
-
-		plt.subplot(2, 2, 4)
-		plt.imshow(ags, cmap=cmap)
-		plt.title('AGS')
-		plt.xticks(visible=False)
-		plt.yticks(visible=False)
-
-
-		plt.subplots_adjust(bottom=0.1, right=0.8, top=0.9)
-		cax = plt.axes([0.85, 0.1, 0.075, 0.8])
-		plt.colorbar(cax=cax)
-
-		plt.show(block=~b)
-		if b:
-			time.sleep(b)
-			plt.close()
-
+        plt.show(block=~b)
+        if b:
+            time.sleep(b)
+            plt.close()
 
 if __name__ == "__main__":
     """
     Application example with visualization.
     """
-    depth = np.random.rand(10, 5)
-    depth = np.hstack((depth*4, depth*0.9))
-    depth[0, 5] = np.nan
-    depth[0, 6] = np.nan
-    depth[depth>4.0] = 0.0
+    h = 6
+    w = 9
+
+    depth = 4 * np.random.rand(h, w)
+    for _ in range(6):
+        y, x = int(h * np.random.sample()), int(w * np.random.sample())
+        depth[y, x] = np.nan
 
     nav = Navigation(True)
-    adapted = nav.reconstructFrame(depth, .1, .5, 10)
-    frac, pos = nav.obstacleAvoid(adapted, 1.3)
+    sample_img, filled, adapted = nav.reconstructFrame(depth, 0.5, .5, 3)
+    pos = nav.obstacleAvoid(adapted, 0.5)
+
+    frac = pos/float(len(depth[0]))
+    print('pos = {0}, frac = {1}'.format(pos, frac))
+
+    nav.plot(depth, sample_img, filled, adapted)
