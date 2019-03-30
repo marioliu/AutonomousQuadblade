@@ -160,8 +160,8 @@ def main():
     groundspeed = 0.5
 
     # connect to vehicle
-    vehicle = connect(connection_string, wait_ready=True, timeout=10)
-    getAttr(vehicle)
+    vehicle = connect(connection_string, wait_ready=False)
+    # getAttr(vehicle)
     vehicle.groundspeed = groundspeed
 
     MAV_MODE_AUTO = 4
@@ -170,7 +170,7 @@ def main():
     home = vehicle.location.global_relative_frame
     while home.lat == None:
         print(" Waiting for vehicle to initialize...")
-        time.sleep(1)
+        time.sleep(2)
         home = vehicle.location.global_relative_frame
     print('Home coords: {0}'.format(home))
     
@@ -182,13 +182,10 @@ def main():
     # a = +north, -south
     # b = +east, -west
     # c = +up, -down
-    # upDown(vehicle)
+    upDown(vehicle)
 
     # arm vehicle
     vehicle.armed = True
-    time.sleep(3)
-    vehicle.armed = False
-    exit(1)
 
     # monitor mission execution
     nextwaypoint = vehicle.commands.next
