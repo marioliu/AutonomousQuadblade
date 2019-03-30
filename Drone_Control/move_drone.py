@@ -223,10 +223,15 @@ def main():
 
     # checks that the home is set before continuing
     home = vehicle.location.global_relative_frame
-    while home.alt == None or home.alt < 0:
+    while home.alt == None:
         print(" Waiting for GPS lock...")
         time.sleep(1)
         home = vehicle.location.global_relative_frame
+    
+    # set home to current position (to hopefully make alt >= 0)
+    vehicle.home_location = vehicle.location.global_frame
+    
+    home = vehicle.location.global_relative_frame
     print('Home coords: {0}'.format(home))
     
     # change to AUTO mode (for mission planning)
