@@ -186,6 +186,8 @@ def main():
 
     # arm vehicle
     vehicle.armed = True
+    time.sleep(3)
+    vehicle.armed = False
     exit(1)
 
     # monitor mission execution
