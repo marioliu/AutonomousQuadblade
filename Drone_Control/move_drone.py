@@ -167,13 +167,13 @@ def main():
     MAV_MODE_AUTO = 4
 
     # checks that the home is set before continuing
-    homeLat = vehicle.location.global_relative_frame.lat
-    while homeLat == None:
+    home = vehicle.location.global_relative_frame
+    while home.lat == None:
         print(" Waiting for vehicle to initialize...")
-        print(' Home latitude: {0}'.format(homeLat))
         time.sleep(1)
-        homeLat = vehicle.location.global_relative_frame.lat
-
+        home = vehicle.location.global_relative_frame
+    print('Home coords: {0}'.format(home))
+    
     # change to AUTO mode
     PX4setMode(vehicle, MAV_MODE_AUTO)
     time.sleep(1)
@@ -182,10 +182,11 @@ def main():
     # a = +north, -south
     # b = +east, -west
     # c = +up, -down
-    upDown(vehicle)
+    # upDown(vehicle)
 
     # arm vehicle
     vehicle.armed = True
+    exit(1)
 
     # monitor mission execution
     nextwaypoint = vehicle.commands.next
