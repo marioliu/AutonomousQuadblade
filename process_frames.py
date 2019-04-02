@@ -149,11 +149,11 @@ def main():
     d_small = cam.reduceFrame(d, height_ratio = height_ratio, sub_sample = sub_sample, reduce_to = reduce_to)
 
     # uncomment to plot original image
-    # fig0 = plt.figure()
-    # plt.imshow(c)
-    # plt.title('Color Image')
-    # plt.grid()
-    # fig0.show()
+    fig0 = plt.figure()
+    plt.imshow(c)
+    plt.title('Color Image')
+    plt.grid()
+    fig0.show()
 
     figs = []
     scaledTitle = 'Scaled (height_ratio = {0}, sub_sample = {1})'.format(height_ratio, sub_sample)
