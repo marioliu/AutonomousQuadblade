@@ -1,14 +1,26 @@
 #!/usr/bin/python
 '''
-Adapted from https://github.com/intel-aero/meta-intel-aero/wiki/04-Autonomous-drone-programming-in-Python, https://dev.px4.io/en/robotics/dronekit.html, and http://python.dronekit.io/guide/taking_off.html
-Description: Module used to move the Intel Aero.
+Author: Mario Liu
+Description: Module used to fly the Intel Aero and plan missions.
+Adapted from https://dev.px4.io/en/robotics/dronekit.html and http://python.dronekit.io/guide/taking_off.html
 '''
 from dronekit import connect, Command, VehicleMode, LocationGlobal, LocationGlobalRelative
 from pymavlink import mavutil
 import time, sys, argparse, math
 
 def getAttr(vehicle):
-    # vehicle is an instance of the Vehicle class
+    '''
+    Outputs a vehicle's attributes.
+
+    Parameters:
+    ----------
+    vehicle: instance of the Vehicle class
+        Vehicle returned from dronekit.connect().
+
+    Returns:
+    -------
+    Nothing.
+    '''
     print('VEHICLE ATTRIBUTES')
     print('-------------------------------------')
     print("Autopilot Firmware version: \n\t%s" % vehicle.version)
@@ -35,7 +47,56 @@ def getAttr(vehicle):
     print("Armed: \n\t%s" % vehicle.armed)    # settable
     print('-------------------------------------')
 
-def PX4setMode(vehicle, mavMode):
+def PX4setMode(vehicle, mavMode=64):
+    '''
+    Sets a vehicle's mode through PX4.
+
+    Parameters:
+    ----------
+    vehicle: instance of the Vehicle class
+        Vehicle returned from dronekit.connect().
+    mavMode: int
+        Flight mode of Aero.
+        https://github.com/PX4/Firmware/blob/master/Tools/mavlink_px4.py
+        -------------------
+        # 0b00000001 Reserved for future use.
+        MAV_MODE_FLAG_CUSTOM_MODE_ENABLED = 1
+
+        # 0b00000010 system has a test mode enabled. This flag
+        # is intended for temporary system tests and should not
+        # be used for stable implementations.
+        MAV_MODE_FLAG_TEST_ENABLED = 2
+
+        # 0b00000100 autonomous mode enabled, system finds its
+        # own goal positions. Guided flag can be set or not,
+        # depends on the actual implementation.
+        MAV_MODE_FLAG_AUTO_ENABLED = 4
+
+        # 0b00001000 guided mode enabled, system flies MISSIONs
+        # and/or mission items.
+        MAV_MODE_FLAG_GUIDED_ENABLED = 8
+
+        # 0b00010000 system stabilizes electronically its
+        # attitude (and optionally position). It needs however
+        # further control inputs to move around.
+        MAV_MODE_FLAG_STABILIZE_ENABLED = 16
+
+        # 0b00100000 hardware in the loop simulation. All motors
+        # and actuators are blocked, but internal software is
+        # fully operational.
+        MAV_MODE_FLAG_HIL_ENABLED = 32
+
+        # 0b01000000 remote control input is enabled.
+        MAV_MODE_FLAG_MANUAL_INPUT_ENABLED = 64
+
+        # 0b10000000 MAV safety set to armed. Motors are enabled
+        # / running / can start. Ready to fly.
+        MAV_MODE_FLAG_SAFETY_ARMED = 128
+
+    Returns:
+    -------
+    Nothing.
+    '''
     vehicle._master.mav.command_long_send(vehicle._master.target_system,\
             vehicle._master.target_component,\
                 mavutil.mavlink.MAV_CMD_DO_SET_MODE,\
@@ -63,7 +124,7 @@ def get_location_offset_meters(original_location, dNorth, dEast, alt):
 
     return LocationGlobal(newlat, newlon, original_location.alt+alt)
 
-def sqMission(vehicle):
+def square(vehicle):
     # load commands
     cmds = vehicle.commands
     cmds.clear()
@@ -122,15 +183,15 @@ def upDown(vehicle):
     cmds.clear()
     home = vehicle.location.global_relative_frame
 
-    # takeoff to 5 meters
-    wp = get_location_offset_meters(home, 0, 0, 5)
+    # takeoff to 3 meters
+    wp = get_location_offset_meters(home, 0, 0, 3)
     cmd = Command(0,0,0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,\
         mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 1, 0, 0, 0, 0,\
             wp.lat, wp.lon, wp.alt)
     cmds.add(cmd)
 
     # land
-    wp = get_location_offset_meters(home, 0, 0, 5)
+    wp = get_location_offset_meters(home, 0, 0, 3)
     cmd = Command(0,0,0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,\
         mavutil.mavlink.MAV_CMD_NAV_LAND, 0, 1, 0, 0, 0, 0,\
             wp.lat, wp.lon, wp.alt)
@@ -144,12 +205,6 @@ def upDown(vehicle):
 def main():
     # parse connection argument
     connection_string = 'tcp:127.0.0.1:5760'
-
-    # SITL
-    # import dronekit_sitl
-    # sitl = dronekit_sitl.start_default()
-    # connection_string = sitl.connection_string()
-
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--connect", help="connection string")
     args = parser.parse_args()
@@ -160,35 +215,39 @@ def main():
     groundspeed = 0.5
 
     # connect to vehicle
-    vehicle = connect(connection_string, wait_ready=True, timeout=10)
-    getAttr(vehicle)
+    vehicle = connect(connection_string, wait_ready=False)
+    # getAttr(vehicle)
     vehicle.groundspeed = groundspeed
 
     MAV_MODE_AUTO = 4
 
     # checks that the home is set before continuing
     home = vehicle.location.global_relative_frame
-    while home.lat == None:
-        print(" Waiting for vehicle to initialize...")
+    while home.alt == None:
+        print(" Waiting for GPS lock...")
         time.sleep(1)
         home = vehicle.location.global_relative_frame
+    
+    # set home to current position (to hopefully make alt >= 0)
+    vehicle.home_location = vehicle.location.global_frame
+    
+    home = vehicle.location.global_relative_frame
     print('Home coords: {0}'.format(home))
     
-    # change to AUTO mode
+    # change to AUTO mode (for mission planning)
     PX4setMode(vehicle, MAV_MODE_AUTO)
     time.sleep(1)
+    print('Mode: ' + str(vehicle.mode.name))
 
     # wp = get_location_offset_meters(home, a, b, c)
     # a = +north, -south
     # b = +east, -west
     # c = +up, -down
-    # upDown(vehicle)
+    upDown(vehicle)
 
     # arm vehicle
+    print('Arming drone...')
     vehicle.armed = True
-    time.sleep(3)
-    vehicle.armed = False
-    exit(1)
 
     # monitor mission execution
     nextwaypoint = vehicle.commands.next
@@ -204,12 +263,15 @@ def main():
         time.sleep(1)
 
     # disarm vehicle
+    print('Disarming drone...')
     vehicle.armed = False
     time.sleep(1)
 
     # close vehicle object before exiting script
     vehicle.close()
     time.sleep(1)
+
+    print('Done')
 
 if __name__== "__main__":
     main()
