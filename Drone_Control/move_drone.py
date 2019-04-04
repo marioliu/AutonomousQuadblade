@@ -243,6 +243,8 @@ def main():
     # a = +north, -south
     # b = +east, -west
     # c = +up, -down
+
+    # set mission commands
     upDown(vehicle)
 
     # arm vehicle

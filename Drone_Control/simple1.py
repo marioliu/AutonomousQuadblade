@@ -19,14 +19,13 @@ from sbp.client.loggers.json_logger import JSONLogger
 from sbp.navigation import SBP_MSG_BASELINE_NED, MsgBaselineNED
 import argparse
 
-
 def main():
     parser = argparse.ArgumentParser(
         description="Swift Navigation SBP Example.")
     parser.add_argument(
         "-p",
         "--port",
-        default=['/dev/ttyUSB4'],
+        default=['/dev/ttyUSB2'],
         nargs=1,
         help="specify the serial port to use.")
     args = parser.parse_args()
@@ -41,7 +40,6 @@ def main():
                                               msg.d * 1e-3))
             except KeyboardInterrupt:
                 pass
-
 
 if __name__ == "__main__":
     main()
