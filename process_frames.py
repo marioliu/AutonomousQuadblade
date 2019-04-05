@@ -22,8 +22,6 @@ def getFramesFromSource(source, numFrames=10):
 
     # assuming source is a Camera object
     try:
-        time.sleep(2.5)
-
         t1 = time.time()
         d, c = source.getFrames(numFrames, rgb=True)
         t2 = time.time()
@@ -145,6 +143,8 @@ def main():
     #######################################################
     # test algorithms and plot
     #######################################################
+    # sleep to make sure camera starts up
+    time.sleep(2.5)
     d, c = getFramesFromSource(source, numFrames)
     d_small = cam.reduceFrame(d, height_ratio = height_ratio, sub_sample = sub_sample, reduce_to = reduce_to)
 

@@ -81,7 +81,7 @@ def findLargestGap(depth_og, min_dist, barrier_h=.5, min_gap=0, DEBUG=False):
     """
     depth = depth_og > min_dist # true where gap exists
     if np.sum(depth[int(barrier_h*depth.shape[0]):]) == 0:
-        return
+        return None
 
     npad = ((0, 0), (1, 1))
     d_padded = np.pad(depth, pad_width=npad, mode='constant', constant_values=0)
@@ -119,10 +119,10 @@ def main():
         y, x = int(h * np.random.sample()), int(w * np.random.sample())
         depth[y, x] = np.nan
 
-    x = findLargestGap(depth, 0.5, DEBUG=True)
+    x = findLargestGap(depth, 1, DEBUG=True)
+    print('Position of gap: {0}'.format(x))
     if x == None:
-        print('No gap found!')
-        exit(1)
+        x = len(depth[0]) // 2
 
     plt.title('Original')
     plt.imshow(depth, cmap='plasma')
