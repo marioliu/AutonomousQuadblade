@@ -130,8 +130,8 @@ def square(vehicle):
     cmds.clear()
     home = vehicle.location.global_relative_frame
 
-    # takeoff to 5 meters
-    wp = get_location_offset_meters(home, 0, 0, 5)
+    # takeoff to 3 meters
+    wp = get_location_offset_meters(home, 0, 0, 3)
     cmd = Command(0,0,0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,\
         mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 1, 0, 0, 0, 0,\
             wp.lat, wp.lon, wp.alt)
@@ -166,7 +166,7 @@ def square(vehicle):
     cmds.add(cmd)
 
     # land
-    wp = get_location_offset_meters(home, 0, 0, 5)
+    wp = get_location_offset_meters(home, 0, 0, 3)
     cmd = Command(0,0,0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,\
         mavutil.mavlink.MAV_CMD_NAV_LAND, 0, 1, 0, 0, 0, 0,\
             wp.lat, wp.lon, wp.alt)
@@ -203,6 +203,8 @@ def upDown(vehicle):
     time.sleep(2)
 
 def main():
+    from piksi import getData
+    portNum = 0
     # parse connection argument
     connection_string = 'tcp:127.0.0.1:5760'
     parser = argparse.ArgumentParser()
@@ -245,7 +247,7 @@ def main():
     # c = +up, -down
 
     # set mission commands
-    upDown(vehicle)
+    square(vehicle)
 
     # arm vehicle
     print('Arming drone...')
@@ -258,6 +260,9 @@ def main():
             display_seq = vehicle.commands.next+1
             print("Moving to waypoint %s" % display_seq)
             nextwaypoint = vehicle.commands.next
+
+            n, e, d = getData(portNum)
+            print('Coords of base = ({0}, {1}, {2})'.format(n, e, d))
         time.sleep(1)
 
     # wait for the vehicle to land

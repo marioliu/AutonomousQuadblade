@@ -80,7 +80,10 @@ def findLargestGap(depth_og, min_dist, barrier_h=.5, min_gap=0, DEBUG=False):
     gap.
     """
     depth = depth_og > min_dist # true where gap exists
-    if np.sum(depth[int(barrier_h*depth.shape[0]):]) == 0:
+    try:
+        if np.sum(depth[int(barrier_h*depth.shape[0]):]) == 0:
+            return None
+    except:
         return None
 
     npad = ((0, 0), (1, 1))

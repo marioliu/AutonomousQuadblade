@@ -39,7 +39,7 @@ class Navigation:
         elif alg_type == 'rbf':
             if len(samples) <= 1:
                 return None
-            filled = rbfi.interpolate(depth.shape,samples, measured_vector)
+            filled = rbfi.interpolate(depth.shape, samples, measured_vector)
         elif alg_type == 'ags_only':
             filled = depth
         else:
