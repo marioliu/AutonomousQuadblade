@@ -131,7 +131,7 @@ def _cleanup(matrix, n):
                 break
             
             if pastBot and pastTop:
-                print('Cannot fill (y, x) = ' + str((yc, xc)))
+                # print('Cannot fill (y, x) = ' + str((yc, xc)))
                 break
     
     return matrix

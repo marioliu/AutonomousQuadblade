@@ -25,7 +25,9 @@ def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, nav, perc_samp
     d_small = cam.reduceFrame(d, height_ratio = height_ratio, sub_sample = sub_sample, reduce_to = reduce_to)
 
     adapted = nav.reconstructFrame(d_small, perc_samples, sigma, iters)
-    if not adapted:
+    try:
+        l = len(adapted)
+    except:
         adapted = d_small
 
     pos = nav.obstacleAvoid(adapted, min_dist)
@@ -49,9 +51,9 @@ def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, nav, perc_samp
 
     da = np.concatenate((d_small, adapted), axis=1)
 
-    cv2.imshow('', da)
+    # cv2.imshow('', da)
 
-    time.sleep(0.1)
+    # time.sleep(1)
 
 def moveToTarget(vehicle, n, e):
     '''
@@ -95,13 +97,13 @@ def moveToTarget(vehicle, n, e):
 def main():
     ######################### set up image processing
     cam = camera.Camera()
-    # cam.connect()
+    cam.connect()
     source = cam
     print('Connected to R200 camera')
     time.sleep(2.5)
     
     max_depth = 4.0
-    numFrames = 2
+    numFrames = 5
     # height_ratio of 1 keeps all rows of original image
     # default of h_r = 0.5, s_s = 0.3
     height_ratio = 0.5
@@ -111,7 +113,7 @@ def main():
     perc_samples = 0.05
     sigma = 0.2
     iters = 2
-    min_dist = 1.5
+    min_dist = 2
     debug = False
 
     print('Program settings:')
@@ -143,11 +145,11 @@ def main():
     #########################
 
     while True:
-        # avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, n, perc_samples, sigma, iters, min_dist)
-        n, e, d = piksi.getData(0)
-        print('n, e, d = ({0}, {1}, {2})'.format(n, e, d))
-        moveToTarget(vehicle, n, e)
-        time.sleep(1)
+        avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, n, perc_samples, sigma, iters, min_dist)
+        # n, e, d = piksi.getData(0)
+        # print('n, e, d = ({0}, {1}, {2})'.format(n, e, d))
+        # moveToTarget(vehicle, n, e)
+        # time.sleep(1)
 
 if __name__ == "__main__":
     try:
