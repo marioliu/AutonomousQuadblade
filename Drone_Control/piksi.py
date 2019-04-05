@@ -26,6 +26,7 @@ import time
 def getData(portNum):
     '''
     Gets NED vector from Piksi GPS located at /dev/ttyUSB[portNum].
+    If two Piksi GPSs are talking, NED vector is in meters.
     '''
     directory = '/dev/ttyUSB' + str(portNum)
     north = None

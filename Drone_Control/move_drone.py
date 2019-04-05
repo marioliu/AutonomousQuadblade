@@ -202,6 +202,38 @@ def upDown(vehicle):
     cmds.upload()
     time.sleep(2)
 
+def toTarget(vehicle, n, e):
+    # load commands
+    cmds = vehicle.commands
+    cmds.clear()
+    home = vehicle.location.global_relative_frame
+
+    # takeoff to 3 meters
+    wp = get_location_offset_meters(home, 0, 0, 3)
+    cmd = Command(0,0,0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,\
+        mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 1, 0, 0, 0, 0,\
+            wp.lat, wp.lon, wp.alt)
+    cmds.add(cmd)
+
+    # move to target
+    wp = get_location_offset_meters(wp, n, e, 0)
+    cmd = Command(0,0,0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,\
+        mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 1, 0, 0, 0, 0,\
+            wp.lat, wp.lon, wp.alt)
+    cmds.add(cmd)
+
+    # land
+    wp = get_location_offset_meters(home, 0, 0, 3)
+    cmd = Command(0,0,0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,\
+        mavutil.mavlink.MAV_CMD_NAV_LAND, 0, 1, 0, 0, 0, 0,\
+            wp.lat, wp.lon, wp.alt)
+    cmds.add(cmd)
+
+    # upload mission
+    print('Uploading mission')
+    cmds.upload()
+    time.sleep(2)
+
 def main():
     from piksi import getData
     portNum = 0
@@ -214,11 +246,13 @@ def main():
     if args.connect:
         connection_string = args.connect
     
-    groundspeed = 0.5
+    airspeed = 0.3
+    groundspeed = 0.3
 
     # connect to vehicle
     vehicle = connect(connection_string, wait_ready=False)
     # getAttr(vehicle)
+    vehicle.airspeed = airspeed
     vehicle.groundspeed = groundspeed
 
     MAV_MODE_AUTO = 4
@@ -230,10 +264,9 @@ def main():
         time.sleep(1)
         home = vehicle.location.global_relative_frame
     
-    # set home to current position (to hopefully make alt >= 0)
+    # hopefully set alt >= 0
     vehicle.home_location = vehicle.location.global_frame
-    
-    home = vehicle.location.global_relative_frame
+    home = vehicle.location.global_frame
     print('Home coords: {0}'.format(home))
     
     # change to AUTO mode (for mission planning)
@@ -247,7 +280,9 @@ def main():
     # c = +up, -down
 
     # set mission commands
-    square(vehicle)
+    n, e, d = getData(portNum)
+    print('Dist to base = ({0}, {1}, {2})'.format(n, e, d))
+    toTarget(vehicle, n, e)
 
     # arm vehicle
     print('Arming drone...')
@@ -261,8 +296,6 @@ def main():
             print("Moving to waypoint %s" % display_seq)
             nextwaypoint = vehicle.commands.next
 
-            n, e, d = getData(portNum)
-            print('Coords of base = ({0}, {1}, {2})'.format(n, e, d))
         time.sleep(1)
 
     # wait for the vehicle to land
