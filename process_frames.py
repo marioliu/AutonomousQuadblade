@@ -106,7 +106,8 @@ def main():
         print('Usage: python {0} [cam|data]'.format(argv[0]))
         exit(1)
 
-    cam = camera.Camera()
+    max_depth = 6.0
+    cam = camera.Camera(max_depth = max_depth)
     source = None
     if argv[1] == 'cam':
         cam.connect()
@@ -119,7 +120,6 @@ def main():
         print('Usage: python {0} [cam|data]'.format(argv[0]))
         exit(1)
 
-    max_depth = 4.0
     numFrames = 10
     # height_ratio of 1 keeps all rows of original image
     # default of h_r = 0.5, s_s = 0.3

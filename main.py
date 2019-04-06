@@ -96,13 +96,13 @@ def moveToTarget(vehicle, n, e):
 
 def main():
     ######################### set up image processing
-    cam = camera.Camera()
+    max_depth = 6.0
+    cam = camera.Camera(max_depth=max_depth)
     cam.connect()
     source = cam
     print('Connected to R200 camera')
     time.sleep(2.5)
     
-    max_depth = 4.0
     numFrames = 5
     # height_ratio of 1 keeps all rows of original image
     # default of h_r = 0.5, s_s = 0.3
