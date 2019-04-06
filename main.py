@@ -125,9 +125,11 @@ def main():
         while True:
             # avoidObs(vehicle, cam, numFrames, height_ratio, sub_sample, reduce_to, n, perc_samples, sigma, iters, min_dist)
             print('Going up...')
-            send_ned_velocity(vehicle, 0, 0, -0.1, 3)
+            send_ned_velocity(vehicle, 0, 0, -0.5, 2)
+            print('Holding...')
+            send_ned_velocity(vehicle, 0, 0, 0, 2)
             print('Going down...')
-            send_ned_velocity(vehicle, 0, 0, 0.1, 3)
+            send_ned_velocity(vehicle, 0, 0, 0.5, 2)
             print('Disarming...')
             vehicle.armed = False
             time.sleep(1)
