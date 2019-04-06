@@ -115,12 +115,12 @@ def main():
         print('Connected to R200 camera')
     elif argv[1] == 'data':
         print('Using data directory for frames')
-        source = './Camera/Sample_Data/17_Mar_2019'
+        source = './Camera/Sample_Data/06_Apr_2019'
     else:
         print('Usage: python {0} [cam|data]'.format(argv[0]))
         exit(1)
 
-    numFrames = 10
+    numFrames = 5
     # height_ratio of 1 keeps all rows of original image
     # default of h_r = 0.5, s_s = 0.3
     height_ratio = 0.5

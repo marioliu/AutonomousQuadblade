@@ -10,7 +10,7 @@ import camera
 from file_support import ensureDir
 import pyrealsense as pyrs
 
-def getSamples(numFrames=10):
+def getSamples(max_depth=6.0, numFrames=5):
     '''
     Gets sample averaged frames from the R200 camera.
     '''
@@ -20,7 +20,7 @@ def getSamples(numFrames=10):
     ensureDir(path)
 
     # get frames
-    cam = camera.Camera(max_depth = 4.0)
+    cam = camera.Camera(max_depth = max_depth)
     cam.connect()
     time.sleep(2.5)
 
@@ -38,8 +38,9 @@ def getSamples(numFrames=10):
     np.save(f, c)
 
 def main():
-    numFrames = 10
-    getSamples(numFrames)
+    max_depth = 6.0
+    numFrames = 5
+    getSamples(max_depth, numFrames)
 
 if __name__ == "__main__":
     main()
