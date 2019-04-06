@@ -246,8 +246,8 @@ def main():
     if args.connect:
         connection_string = args.connect
     
-    airspeed = 0.3
-    groundspeed = 0.3
+    airspeed = 0.1
+    groundspeed = 0.1
 
     # connect to vehicle
     vehicle = connect(connection_string, wait_ready=False)
@@ -280,10 +280,10 @@ def main():
     # c = +up, -down
 
     # set mission commands
-    n, e, d = getData(portNum)
-    print('Dist to base = ({0}, {1}, {2})'.format(n, e, d))
-    toTarget(vehicle, n, e)
-
+    # n, e, d = getData(portNum)
+    # print('Dist to base = ({0}, {1}, {2})'.format(n, e, d))
+    # toTarget(vehicle, n, e)
+    upDown(vehicle)
     # arm vehicle
     print('Arming drone...')
     vehicle.armed = True
@@ -291,6 +291,8 @@ def main():
     # monitor mission execution
     nextwaypoint = vehicle.commands.next
     while nextwaypoint < len(vehicle.commands):
+        print(vehicle.airspeed)
+        print(vehicle.groundspeed)
         if vehicle.commands.next > nextwaypoint:
             display_seq = vehicle.commands.next+1
             print("Moving to waypoint %s" % display_seq)

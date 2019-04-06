@@ -27,7 +27,7 @@ def send_ned_velocity(vehicle, velocity_x, velocity_y, velocity_z, duration):
     """
     msg = vehicle.message_factory.set_position_target_local_ned_encode(
         0,       # time_boot_ms (not used)
-        0, 0,    # target system, target component
+        vehicle._master.target_system, vehicle._master.target_component,    # target system, target component
         mavutil.mavlink.MAV_FRAME_LOCAL_NED, # frame
         0b0000111111000111, # type_mask (only speeds enabled)
         0, 0, 0, # x, y, z positions (not used)
@@ -125,11 +125,13 @@ def main():
         while True:
             # avoidObs(vehicle, cam, numFrames, height_ratio, sub_sample, reduce_to, n, perc_samples, sigma, iters, min_dist)
             print('Going up...')
-            send_ned_velocity(vehicle, 0, 0, -0.5, 2)
+            send_ned_velocity(vehicle, 0, 0, -1, 4)
             print('Holding...')
             send_ned_velocity(vehicle, 0, 0, 0, 2)
             print('Going down...')
-            send_ned_velocity(vehicle, 0, 0, 0.5, 2)
+            send_ned_velocity(vehicle, 0, 0, 1, 4)
+            print('Holding...')
+            send_ned_velocity(vehicle, 0, 0, 0, 2)
             print('Disarming...')
             vehicle.armed = False
             time.sleep(1)

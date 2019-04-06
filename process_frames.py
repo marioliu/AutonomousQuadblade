@@ -44,12 +44,10 @@ def getFramesFromSource(source, numFrames=10):
                 c = frame
             elif 'd.npy' in file:
                 d = frame
-            else:
-                print('Directory does not contain properly formatted .npy files')
-                exit(1)
 
         return d, c
-    except:
+    except Exception as e:
+        print('Error: ' + str(e))
         raise Exception('source must a Camera object or a path to a directory of .npy files!')
 
 def plot2(figs, m1, m2, title1, title2):
