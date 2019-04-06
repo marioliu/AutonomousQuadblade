@@ -17,8 +17,30 @@ import time
 import cv2
 import numpy as np
 from dronekit import connect
+from pymavlink import mavutil
 
-def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, nav, perc_samples, sigma, iters, min_dist):
+# copied from: http://python.dronekit.io/guide/copter/guided_mode.html
+def send_ned_velocity(vehicle, velocity_x, velocity_y, velocity_z, duration):
+    """
+    Move vehicle in direction based on specified velocity vectors.
+    velocity_z is positive towards the ground.
+    """
+    msg = vehicle.message_factory.set_position_target_local_ned_encode(
+        0,       # time_boot_ms (not used)
+        0, 0,    # target system, target component
+        mavutil.mavlink.MAV_FRAME_LOCAL_NED, # frame
+        0b0000111111000111, # type_mask (only speeds enabled)
+        0, 0, 0, # x, y, z positions (not used)
+        velocity_x, velocity_y, velocity_z, # x, y, z velocity in m/s
+        0, 0, 0, # x, y, z acceleration (not supported yet, ignored in GCS_Mavlink)
+        0, 0)    # yaw, yaw_rate (not supported yet, ignored in GCS_Mavlink)
+
+    # send command to vehicle on 1 Hz cycle
+    for x in range(0,duration):
+        vehicle.send_mavlink(msg)
+        time.sleep(1)
+
+def avoidObs(vehicle, cam, numFrames, height_ratio, sub_sample, reduce_to, nav, perc_samples, sigma, iters, min_dist):
     t1 = time.time()
 
     d, c = cam.getFrames(numFrames, rgb=True)
@@ -41,58 +63,10 @@ def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, nav, perc_samp
 
     print('Time for 1 iter: {0}\n'.format(t2 -t1))
 
-    c = cv2.cvtColor(c, cv2.COLOR_RGB2BGR)
+    send_ned_velocity(vehicle, 0, 0, -0.1, 3)
+    send_ned_velocity(vehicle, 0, 0, 0.1, 3)
 
-    # depth
-    d_small = cv2.applyColorMap(d_small.astype(np.uint8), cv2.COLORMAP_RAINBOW)
-
-    # rbf
-    adapted = cv2.applyColorMap(adapted.astype(np.uint8), cv2.COLORMAP_RAINBOW)
-
-    da = np.concatenate((d_small, adapted), axis=1)
-
-    # cv2.imshow('', da)
-
-    # time.sleep(1)
-
-def moveToTarget(vehicle, n, e):
-    '''
-    Moves vehicle to target at (n, e).
-    '''
-    groundspeed = 0.5
-    vehicle.groundspeed = groundspeed
-
-    # checks that GPS lock is set before continuing
-    home = vehicle.location.global_relative_frame
-    while home.alt == None:
-        print(" Waiting for GPS lock...")
-        time.sleep(1)
-        home = vehicle.location.global_relative_frame
-    
-    home = vehicle.location.global_relative_frame
-    print('Home coords: {0}'.format(home))
-
-    # wp = get_location_offset_meters(home, a, b, c)
-    # a = +north, -south
-    # b = +east, -west
-    # c = +up, -down
-
-    # arm vehicle
-    print('Arming drone...')
-    vehicle.armed = True
-
-    # set velocities
-
-    # disarm vehicle
-    print('Disarming drone...')
-    vehicle.armed = False
     time.sleep(1)
-
-    # close vehicle object before exiting script
-    vehicle.close()
-    time.sleep(1)
-
-    print('Done')
 
 def main():
     ######################### set up image processing
@@ -144,12 +118,24 @@ def main():
     print('Mode: ' + str(vehicle.mode.name))
     #########################
 
-    while True:
-        avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, n, perc_samples, sigma, iters, min_dist)
-        # n, e, d = piksi.getData(0)
-        # print('n, e, d = ({0}, {1}, {2})'.format(n, e, d))
-        # moveToTarget(vehicle, n, e)
-        # time.sleep(1)
+    # arm vehicle
+    print('Arming drone...')
+    vehicle.armed = True
+
+    try:
+        while True:
+            avoidObs(vehicle, cam, numFrames, height_ratio, sub_sample, reduce_to, n, perc_samples, sigma, iters, min_dist)
+            vehicle.armed = False
+            return
+    except KeyboardInterrupt:
+        # disarm vehicle
+        print('Disarming drone...')
+        vehicle.armed = False
+        time.sleep(1)
+
+        # close vehicle object before exiting script
+        vehicle.close()
+        time.sleep(1)
 
 if __name__ == "__main__":
     try:
