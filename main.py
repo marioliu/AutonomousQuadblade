@@ -36,7 +36,7 @@ def send_ned_velocity(vehicle, velocity_x, velocity_y, velocity_z, duration):
         0, 0)    # yaw, yaw_rate (not supported yet, ignored in GCS_Mavlink)
 
     # send command to vehicle on 1 Hz cycle
-    for x in range(0,duration):
+    for x in range(0, duration):
         vehicle.send_mavlink(msg)
         time.sleep(1)
 
@@ -63,18 +63,17 @@ def avoidObs(vehicle, cam, numFrames, height_ratio, sub_sample, reduce_to, nav, 
 
     print('Time for 1 iter: {0}\n'.format(t2 -t1))
 
-    send_ned_velocity(vehicle, 0, 0, -0.1, 3)
-    send_ned_velocity(vehicle, 0, 0, 0.1, 3)
-
-    time.sleep(1)
-
 def main():
     ######################### set up image processing
     max_depth = 6.0
     cam = camera.Camera(max_depth=max_depth)
-    cam.connect()
+    try:
+        cam.connect()
+        print('Connected to R200 camera')
+    except:
+        print('Cannot connect to camera')
+        pass
     source = cam
-    print('Connected to R200 camera')
     time.sleep(2.5)
     
     numFrames = 5
@@ -110,10 +109,10 @@ def main():
     connection_string = 'tcp:127.0.0.1:5760'
     vehicle = connect(connection_string, wait_ready=False)
     # set home to current position (to hopefully make alt >= 0)
-    # vehicle.home_location = vehicle.location.global_frame
-    MAV_MODE_AUTO = 4
-    # change to AUTO mode (for mission planning)
-    md.PX4setMode(vehicle, MAV_MODE_AUTO)
+    vehicle.home_location = vehicle.location.global_frame
+    MAV_MODE = 8
+    # change to MAV_MODE mode
+    md.PX4setMode(vehicle, MAV_MODE)
     time.sleep(1)
     print('Mode: ' + str(vehicle.mode.name))
     #########################
@@ -124,8 +123,14 @@ def main():
 
     try:
         while True:
-            avoidObs(vehicle, cam, numFrames, height_ratio, sub_sample, reduce_to, n, perc_samples, sigma, iters, min_dist)
+            # avoidObs(vehicle, cam, numFrames, height_ratio, sub_sample, reduce_to, n, perc_samples, sigma, iters, min_dist)
+            print('Going up...')
+            send_ned_velocity(vehicle, 0, 0, -0.1, 3)
+            print('Going down...')
+            send_ned_velocity(vehicle, 0, 0, 0.1, 3)
+            print('Disarming...')
             vehicle.armed = False
+            time.sleep(1)
             return
     except KeyboardInterrupt:
         # disarm vehicle
