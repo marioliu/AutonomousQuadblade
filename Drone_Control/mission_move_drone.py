@@ -223,7 +223,7 @@ def toTarget(vehicle, n, e):
     cmds.add(cmd)
 
     # land
-    wp = get_location_offset_meters(home, 0, 0, 3)
+    wp = get_location_offset_meters(wp, 0, 0, 0)
     cmd = Command(0,0,0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,\
         mavutil.mavlink.MAV_CMD_NAV_LAND, 0, 1, 0, 0, 0, 0,\
             wp.lat, wp.lon, wp.alt)
@@ -263,10 +263,7 @@ def main():
         print(" Waiting for GPS lock...")
         time.sleep(1)
         home = vehicle.location.global_relative_frame
-    
-    # hopefully set alt >= 0
-    vehicle.home_location = vehicle.location.global_frame
-    home = vehicle.location.global_frame
+
     print('Home coords: {0}'.format(home))
     
     # change to AUTO mode (for mission planning)
@@ -280,9 +277,10 @@ def main():
     # c = +up, -down
 
     # set mission commands
-    # n, e, d = getData(portNum)
-    # print('Dist to base = ({0}, {1}, {2})'.format(n, e, d))
-    # toTarget(vehicle, n, e)
+    n, e, d = getData(portNum)
+    print('Dist to base = ({0}, {1}, {2})'.format(n, e, d))
+    toTarget(vehicle, n, e)
+
     upDown(vehicle)
     # arm vehicle
     print('Arming drone...')

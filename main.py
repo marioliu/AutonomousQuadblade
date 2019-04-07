@@ -9,7 +9,7 @@ from Algorithms import adaptive_grid_sizing as ags
 from Algorithms import rbf_interpolation as rbfi
 from Algorithms import nav
 from process_frames import plot2
-from Drone_Control import move_drone as md
+from Drone_Control import mission_move_drone as md
 from Drone_Control import piksi
 
 import matplotlib.pyplot as plt
