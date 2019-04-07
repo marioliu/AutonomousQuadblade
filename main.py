@@ -28,7 +28,8 @@ def send_ned_velocity(vehicle, velocity_x, velocity_y, velocity_z, duration):
     msg = vehicle.message_factory.set_position_target_local_ned_encode(
         0,       # time_boot_ms (not used)
         vehicle._master.target_system, vehicle._master.target_component,    # target system, target component
-        mavutil.mavlink.MAV_FRAME_LOCAL_NED, # frame
+        # mavutil.mavlink.MAV_FRAME_LOCAL_NED, # frame
+        mavutil.mavlink.MAV_FRAME_BODY_NED,
         0b0000111111000111, # type_mask (only speeds enabled)
         0, 0, 0, # x, y, z positions (not used)
         velocity_x, velocity_y, velocity_z, # x, y, z velocity in m/s
