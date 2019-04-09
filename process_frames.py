@@ -168,6 +168,10 @@ def main():
     print('')
     plot2(figs, d_small, recon, scaledTitle, 'Adaptive Grid Sizing (AGS) (Recon)')
 
+    # use when rbf fails
+    raw_input('Press <Enter> to close all plots and exit')
+    return
+    
     # radial basis function
     t1 = time.time()
     samples, measured_vector = cs.createSamples(d_small, 0.01)
