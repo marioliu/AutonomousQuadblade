@@ -209,14 +209,14 @@ def toTarget(vehicle, n, e):
     home = vehicle.location.global_relative_frame
 
     # takeoff to 3 meters
-    wp = get_location_offset_meters(home, 0, 0, 3)
+    wp = get_location_offset_meters(home, 0, 0, 2)
     cmd = Command(0,0,0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,\
         mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 1, 0, 0, 0, 0,\
             wp.lat, wp.lon, wp.alt)
     cmds.add(cmd)
 
     # move to target
-    wp = get_location_offset_meters(wp, n, e, 0)
+    wp = get_location_offset_meters(wp, -n, -e, 0)
     cmd = Command(0,0,0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,\
         mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 1, 0, 0, 0, 0,\
             wp.lat, wp.lon, wp.alt)
@@ -285,6 +285,7 @@ def main():
     # arm vehicle
     print('Arming drone...')
     vehicle.armed = True
+    time.sleep(1)
 
     # monitor mission execution
     nextwaypoint = vehicle.commands.next
