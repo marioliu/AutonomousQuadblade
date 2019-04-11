@@ -31,7 +31,7 @@ def getSamples(max_depth=6.0, numFrames=5):
     print(printStmt.format(numFrames))
 
     # save frames
-    i = int(100 * np.random.sample())
+    i = int(1000 * np.random.sample())
     f = os.path.join(path, "%d_d.npy"%(i))
     np.save(f, d)
     f = os.path.join(path, "%d_c.npy"%(i))
