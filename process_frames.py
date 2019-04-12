@@ -8,7 +8,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-def getFramesFromSource(source, numFrames=10):
+def getFramesFromSource(source, numFrames=5):
     '''
     Gets frames from either a data directory or from the camera itself.
 
@@ -113,7 +113,7 @@ def main():
         print('Connected to R200 camera')
     elif argv[1] == 'data':
         print('Using data directory for frames')
-        source = './Camera/Sample_Data/dist_comparison'
+        source = './Camera/Sample_Data/frame_comparison'
     else:
         print('Usage: python {0} [cam|data]'.format(argv[0]))
         exit(1)
