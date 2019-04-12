@@ -245,15 +245,10 @@ def main():
 
     if args.connect:
         connection_string = args.connect
-    
-    airspeed = 0.1
-    groundspeed = 0.1
 
     # connect to vehicle
     vehicle = connect(connection_string, wait_ready=False)
     # getAttr(vehicle)
-    vehicle.airspeed = airspeed
-    vehicle.groundspeed = groundspeed
 
     MAV_MODE_AUTO = 4
 
@@ -268,7 +263,7 @@ def main():
     
     # change to AUTO mode (for mission planning)
     PX4setMode(vehicle, MAV_MODE_AUTO)
-    time.sleep(1)
+    time.sleep(2)
     print('Mode: ' + str(vehicle.mode.name))
 
     # wp = get_location_offset_meters(home, a, b, c)
@@ -281,7 +276,6 @@ def main():
     print('Dist to base = ({0}, {1}, {2})'.format(n, e, d))
     toTarget(vehicle, n, e)
 
-    upDown(vehicle)
     # arm vehicle
     print('Arming drone...')
     vehicle.armed = True
