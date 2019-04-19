@@ -1,7 +1,6 @@
 '''
 Adapted from https://github.com/IntelligentQuadruped, with permission
-Description: Module to clean camera data and provide an open direction
-to move in.
+Description: Module to do gap detection on a depth matrix.
 '''
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,13 +9,14 @@ class __GapData:
     """
     Private Object that will keep track of current row data.
     """
-    def __init__(self, row_i, start_i, end_i, n, frac_h):
+    def __init__(self, row_i, start_i, end_i, n):
         """
-        Intitalize Camera object with following optional parameters:
-            row_i			Number of frames to average over
-            start_i 		Ratio of bottom part of image to keep
-            end_i			Rescale image by sub_sample
-            n				Upper values to keep in depth image
+        Parameters
+        ----------
+            row_i			Current row of GapData
+            start_i 		Starting row
+            end_i			End row
+            n				
         """
         self.row_i = row_i
         self.start_i = start_i
@@ -92,7 +92,7 @@ def findLargestGap(depth_og, min_dist, barrier_h=.5, min_gap=0, DEBUG=False):
     indices = np.nonzero(np.diff(d_padded))
     row_indices = indices[0][0::2] # row indices
     data = __GapData(row_indices, indices[1][0::2], indices[1][1::2],
-        len(np.unique(row_indices)), barrier_h)
+        len(np.unique(row_indices)))
 
     __addNextRow(0, 0, np.inf, data)
     sf = data.gap
@@ -101,10 +101,12 @@ def findLargestGap(depth_og, min_dist, barrier_h=.5, min_gap=0, DEBUG=False):
     if sf[1] - sf[0] < min_gap:
         return None
 
-    if DEBUG: 
+    if DEBUG:
+        plt.figure(figsize = (6, 2.5))
+        plt.subplot(1, 2, 1)
         plt.imshow(depth)
         plt.title('Obstacles')
-        plt.show()
+        plt.grid()
 
     return (sf[0]+sf[1])/2.
 
@@ -113,24 +115,40 @@ def main():
     Unit tests
     '''
     import matplotlib.pyplot as plt
+    from create_samples import createSamples
+    import voronoi
+    import discretize as disc
 
-    h = 6
-    w = 9
+    h = 12
+    w = 16
+    perc_samples = 0.3
+    iters = 3
 
-    depth = 4 * np.random.rand(h, w)
-    for _ in range(6):
+    depth = 6.0 * np.random.rand(h, w)
+    for _ in range(int((h * w) * 0.6)):
         y, x = int(h * np.random.sample()), int(w * np.random.sample())
         depth[y, x] = np.nan
 
-    x = findLargestGap(depth, 1, DEBUG=True)
-    print('Position of gap: {0}'.format(x))
-    if x == None:
-        x = len(depth[0]) // 2
+    samples, measured_vector = createSamples(depth, perc_samples)
+    v = voronoi.getVoronoi(depth.shape, samples, measured_vector)
+    d = disc.depthCompletion(v, iters)
 
-    plt.title('Original')
-    plt.imshow(depth, cmap='plasma')
-    plt.scatter(int(x), 2, color='k', marker='o')
-    plt.margins(x=0)
+    x = findLargestGap(d, 1, DEBUG=True)
+    print('(frac, position) of gap: ({0}, {1})'.format(float(x)/len(d[0]), x))
+    if x == None:
+        x = len(d[0]) // 2
+
+    plt.subplot(1, 2, 2)
+    plt.imshow(d, cmap='plasma')
+    plt.title('Gap Detection')
+    plt.colorbar(fraction = 0.046, pad = 0.04)
+    plt.plot([x, x], [len(d)-1, len(d)//2], 'r-', LineWidth=5)
+    plt.plot([x, x], [len(d)-1, len(d)//2], 'w-', LineWidth=2)
+    for i in range(len(d)//2, len(d)):
+        plt.plot(int(x), i, 'wo', markersize=5)
+        plt.plot(int(x), i, 'ro', markersize=3)
+    
+    plt.subplots_adjust(wspace = 0.3)
 
     plt.show()
 

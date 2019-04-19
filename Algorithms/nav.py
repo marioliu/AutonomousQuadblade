@@ -6,11 +6,11 @@ move in.
 import numpy as np
 from scipy import sparse
 import matplotlib.pyplot as plt
-import discretize as ags
+import discretize as disc
 import voronoi
 import rbf_interpolation as rbfi
 from create_samples import createSamples
-import obstacle_avoid as oa
+import gap_detection as gd
 import time
 import logging
 
@@ -40,13 +40,13 @@ class Navigation:
             if len(samples) <= 1:
                 return None
             filled = rbfi.interpolate(depth.shape, samples, measured_vector)
-        elif alg_type == 'ags_only':
+        elif alg_type == 'disc_only':
             filled = depth
         else:
             print('Specify an alg_type in nav.reconstructFrame()')
             exit(1)
 
-        adapted = ags.depthCompletion(filled, iters)
+        adapted = disc.depthCompletion(filled, iters)
 
         if self.debug:
             sample_img = np.zeros((depth.shape)).flatten()
@@ -64,47 +64,39 @@ class Navigation:
         that can be used, returning the position along the image's width where
         it is.
         """
-        pos = oa.findLargestGap(depth, min_dist, barrier_h, DEBUG=self.debug)
+        pos = gd.findLargestGap(depth, min_dist, barrier_h, DEBUG=self.debug)
 
         return pos
 
-    def plot(self, depth, sample_img, filled, ags, cmap='plasma', b=True):
+    def plot(self, depth, sample_img, filled, disc, cmap='plasma', b=True):
         """
         Will plot the original depth, interpolated depth, and the
         position of where the algorithm recommends to move.
         """
-        plt.figure(figsize=(7, 5.5))
+        plt.figure()
+        y = 1.04
+
         plt.subplot(2, 2, 1)
-        plt.title('Depth')
+        plt.title('Depth', y=y)
         plt.imshow(depth, cmap=cmap)
-        plt.xticks(visible=False)
-        plt.yticks(visible=False)
-        plt.colorbar()
+        plt.colorbar(fraction = 0.046, pad = 0.04)
 
         plt.subplot(2, 2, 2)
         plt.imshow(sample_img, cmap=cmap)
-        plt.title('Samples')
-        plt.xticks(visible=False)
-        plt.yticks(visible=False)
-        plt.colorbar()
+        plt.title('Samples', y=y)
+        plt.colorbar(fraction = 0.046, pad = 0.04)
 
         plt.subplot(2, 2, 3)
         plt.imshow(filled, cmap=cmap)
-        plt.title('RBF')
-        plt.xticks(visible=False)
-        plt.yticks(visible=False)
-        plt.colorbar()
+        plt.title('Natural Neighbor', y=y)
+        plt.colorbar(fraction = 0.046, pad = 0.04)
 
         plt.subplot(2, 2, 4)
-        plt.imshow(ags, cmap=cmap)
-        plt.title('RBF + AGS')
-        plt.xticks(visible=False)
-        plt.yticks(visible=False)
-        plt.colorbar()
+        plt.imshow(disc, cmap=cmap)
+        plt.title('Discretized Natural Neighbor', y=y)
+        plt.colorbar(fraction = 0.046, pad = 0.04)
 
-        plt.subplots_adjust(bottom=0.1, right=0.9, top=0.9, left=0.125)
-        # cax = plt.axes([0.85, 0.1, 0.075, 0.8])
-        # plt.colorbar(cax=cax)
+        plt.subplots_adjust(hspace = 0.3, wspace = 0.3)
 
         plt.show(block=~b)
         if b:
@@ -115,16 +107,18 @@ if __name__ == "__main__":
     """
     Application example with visualization.
     """
-    h = 6
-    w = 9
+    h = 12
+    w = 16
+    perc_samples = 0.3
+    iters = 3
 
-    depth = 4 * np.random.rand(h, w)
-    for _ in range(6):
+    depth = 6.0 * np.random.rand(h, w)
+    for _ in range(int((h * w) * 0.6)):
         y, x = int(h * np.random.sample()), int(w * np.random.sample())
         depth[y, x] = np.nan
 
     nav = Navigation(True)
-    sample_img, filled, adapted = nav.reconstructFrame(depth, 0.5, .5, 2)
+    sample_img, filled, adapted = nav.reconstructFrame(depth, perc_samples, iters, alg_type='voronoi')
     pos = nav.obstacleAvoid(adapted, 1)
 
     if pos == None:

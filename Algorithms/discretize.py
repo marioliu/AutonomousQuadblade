@@ -150,22 +150,35 @@ if __name__ == "__main__":
     w = 16
 
     depth = 6.0 * np.random.rand(h, w)
-    dep_comp = depthCompletion(depth, 3)
+    dep_0 = depthCompletion(depth, 0)
+    avg = np.average(dep_0)
+    print('Average of iters = 0: {0}'.format(avg))
+    dep_1 = depthCompletion(depth, 1)
+    dep_2 = depthCompletion(depth, 2)
 
-    figsize = (6, 2.5)
-    plt.figure(figsize = figsize)
+    plt.figure()
 
-    plt.subplot(1, 2, 1)
+    plt.subplot(2, 2, 1)
     plt.title('Original')
     plt.imshow(depth, cmap='plasma')
     plt.colorbar(fraction = 0.046, pad = 0.04)
 
-    plt.subplot(1, 2, 2)
-    plt.title('Discretization')
-    plt.imshow(dep_comp, cmap='plasma')
+    plt.subplot(2, 2, 2)
+    plt.title('Discretization, iters = {0}'.format(0))
+    plt.imshow(dep_0, cmap='plasma')
     plt.colorbar(fraction = 0.046, pad = 0.04)
 
-    plt.subplots_adjust(wspace = 0.3)
+    plt.subplot(2, 2, 3)
+    plt.title('Discretization, iters = {0}'.format(1))
+    plt.imshow(dep_1, cmap='plasma')
+    plt.colorbar(fraction = 0.046, pad = 0.04)
+
+    plt.subplot(2, 2, 4)
+    plt.title('Discretization, iters = {0}'.format(2))
+    plt.imshow(dep_2, cmap='plasma')
+    plt.colorbar(fraction = 0.046, pad = 0.04)
+
+    plt.subplots_adjust(wspace = 0.4)
     plt.show()
 
 else:

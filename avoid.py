@@ -5,7 +5,7 @@ Description: Module to test the ODA algorithm.
 
 from Camera import camera
 from Algorithms import create_samples as cs
-from Algorithms import discretize as ags
+from Algorithms import discretize as disc
 from Algorithms import rbf_interpolation as rbfi
 from Algorithms import nav
 from process_frames import plot2
@@ -41,7 +41,7 @@ def send_ned_velocity(vehicle, velocity_x, velocity_y, velocity_z, duration):
         vehicle.send_mavlink(msg)
         time.sleep(1)
 
-def avoidObs(vehicle, cam, numFrames, height_ratio, sub_sample, reduce_to, nav, perc_samples, iters, min_dist):
+def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, nav, perc_samples, iters, min_dist):
     t1 = time.time()
 
     d, c = cam.getFrames(numFrames, rgb=True)
@@ -105,7 +105,7 @@ def main():
     #########################
 
     while True:
-        avoidObs(vehicle, cam, numFrames, height_ratio, sub_sample, reduce_to, n, perc_samples, iters, min_dist)
+        avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, n, perc_samples, iters, min_dist)
         time.sleep(1)
     
     # ######################### set up drone connection

@@ -94,7 +94,7 @@ def main():
     '''
     import sys
     from Camera import camera
-    from Algorithms import discretize as ags
+    from Algorithms import discretize as disc
     from Algorithms import rbf_interpolation as rbfi
     from Algorithms import voronoi as voro
     from Algorithms import create_samples as cs
@@ -160,10 +160,10 @@ def main():
 
     # initial discretization
     t1 = time.time()
-    recon = ags.depthCompletion(d_small, iters)
+    recon = disc.depthCompletion(d_small, iters)
     t2 = time.time()
 
-    print('Time to do AGS: ' + str(t2 - t1))
+    print('Time to do disc: ' + str(t2 - t1))
     print('')
     plot2(figs, d_small, recon, scaledTitle, 'Discretization')
 
@@ -179,15 +179,15 @@ def main():
     except:
         rbf = d_small
     t2 = time.time()
-    rbf_ags = ags.depthCompletion(rbf, iters)
+    rbf_disc = disc.depthCompletion(rbf, iters)
     t3 = time.time()
 
     print('Time to do RBF: ' + str(t2 - t1))
     plot2(figs, d_small, rbf, scaledTitle, 'RBF')
 
-    print('Time to do RBF and AGS: ' + str(t3 - t1))
+    print('Time to do RBF and disc: ' + str(t3 - t1))
     print('')
-    plot2(figs, d_small, rbf_ags, scaledTitle, 'RBF and AGS')
+    plot2(figs, d_small, rbf_disc, scaledTitle, 'RBF and disc')
 
     # Voronoi interpolation
     t1 = time.time()
@@ -197,15 +197,15 @@ def main():
     except:
         v = d_small
     t2 = time.time()
-    voro_ags = ags.depthCompletion(v, iters)
+    voro_disc = disc.depthCompletion(v, iters)
     t3 = time.time()
 
     print('Time to do Voronoi: ' + str(t2 - t1))
     plot2(figs, d_small, v, scaledTitle, 'Voronoi')
 
-    print('Time to do Voronoi and AGS: ' + str(t3 - t1))
+    print('Time to do Voronoi and disc: ' + str(t3 - t1))
     print('')
-    plot2(figs, d_small, voro_ags, scaledTitle, 'Voronoi and AGS')
+    plot2(figs, d_small, voro_disc, scaledTitle, 'Voronoi and disc')
 
     # block plots until button is pressed
     raw_input('Press <Enter> to close all plots and exit')

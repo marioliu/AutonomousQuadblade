@@ -5,7 +5,7 @@ Description: Module to do data processing for thesis writeup.
 
 from Camera import camera
 from Algorithms import create_samples as cs
-from Algorithms import discretize as ags
+from Algorithms import discretize as disc
 from Algorithms import rbf_interpolation as rbfi
 from Algorithms import nav
 from process_frames import plot2
@@ -56,7 +56,7 @@ def dist_test():
     plt.show()
 
 def outdoors():
-    source = './Camera/Sample_Data/center_tree'
+    source = './Camera/Sample_Data/left_tree'
     d, c = getFramesFromSource(source)
 
     # figsize = width, height
@@ -212,11 +212,11 @@ def interp_comp():
 
 def main():
     # dist_test()
-    # outdoors()
+    outdoors()
     # frame_comp()
     # timing()
     # scale()
-    interp_comp()
+    # interp_comp()
 
 if __name__ == "__main__":
     try:
