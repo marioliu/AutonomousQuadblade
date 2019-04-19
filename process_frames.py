@@ -118,7 +118,7 @@ def main():
         print('Usage: python {0} [cam|data]'.format(argv[0]))
         exit(1)
 
-    numFrames = 5
+    numFrames = 60
     # height_ratio of 1 keeps all rows of original image
     # default of h_r = 0.5, s_s = 0.3
     height_ratio = 1

@@ -6,8 +6,8 @@ Description: Module to test the ODA algorithm.
 from Camera import camera
 from Algorithms import create_samples as cs
 from Algorithms import discretize as disc
-from Algorithms import rbf_interpolation as rbfi
-from Algorithms import nav
+from Algorithms import voronoi as voronoi
+from Algorithms import gap_detection as gd
 from process_frames import plot2
 from Drone_Control import mission_move_drone as md
 from Drone_Control import piksi
@@ -41,28 +41,40 @@ def send_ned_velocity(vehicle, velocity_x, velocity_y, velocity_z, duration):
         vehicle.send_mavlink(msg)
         time.sleep(1)
 
-def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, nav, perc_samples, iters, min_dist):
+def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, perc_samples, iters, min_dist, DEBUG=False):
+    d = cam.getFrames(numFrames, rgb=False)
+
     t1 = time.time()
 
-    d, c = cam.getFrames(numFrames, rgb=True)
     d_small = cam.reduceFrame(d, height_ratio = height_ratio, sub_sample = sub_sample, reduce_to = reduce_to)
 
-    adapted = nav.reconstructFrame(d_small, perc_samples, iters, alg_type='voronoi')
+    samples, measured_vector = cs.createSamples(d_small, perc_samples)
     try:
-        l = len(adapted)
+        v = voronoi.getVoronoi(d_small.shape, samples, measured_vector)
     except:
-        adapted = d_small
+        v = d_small
+    d = disc.depthCompletion(v, iters)
 
-    pos = nav.obstacleAvoid(adapted, min_dist)
-    if pos == None:
-        pos = int(len(d_small[0]) / 2)
-
-    frac = pos/float(len(d_small[0]))
-    print('Gap: pos = {0}, frac = {1}'.format(pos, frac))
+    x = gd.findLargestGap(d, min_dist, DEBUG=DEBUG)
 
     t2 = time.time()
+    print('t: {0}'.format(t2 - t1))
 
-    print('Time for 1 iter: {0}\n'.format(t2 -t1))
+    if x == None:
+        x = len(d[0]) // 2
+    print('(frac, position) of gap: ({0}, {1})\n'.format(float(x)/len(d[0]), x))
+
+    plt.figure()
+    plt.imshow(d, cmap='plasma')
+    plt.title('Gap Detection')
+    plt.colorbar(fraction = 0.046, pad = 0.04)
+    plt.plot([x, x], [len(d)-1, len(d)//2], 'r-', LineWidth=5)
+    plt.plot([x, x], [len(d)-1, len(d)//2], 'w-', LineWidth=2)
+    for i in range(len(d)//2, len(d)):
+        plt.plot(int(x), i, 'wo', markersize=5)
+        plt.plot(int(x), i, 'ro', markersize=3)
+
+    plt.show()
 
 def main():
     ######################### set up image processing
@@ -82,10 +94,10 @@ def main():
     # default of h_r = 0.5, s_s = 0.3
     height_ratio = 0.5
     sub_sample = 0.3
-    # reduce_to argument can be: 'lower', 'middle_lower', 'middle', 'middle_upper', and 'upper'
+    # reduce_to argFalseument can be: 'lower', 'middle_lower', 'middle', 'middle_upper', and 'upper'
     reduce_to = 'middle'
     perc_samples = 0.01
-    iters = 2
+    iters = 3
     min_dist = 1
     debug = False
 
@@ -101,12 +113,9 @@ def main():
     print('\tmin_dist: ' + str(min_dist))
     print('\tdebug: ' + str(debug))
 
-    n = nav.Navigation(debug)
     #########################
-
     while True:
-        avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, n, perc_samples, iters, min_dist)
-        time.sleep(1)
+        avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, perc_samples, iters, min_dist, DEBUG=debug)
     
     # ######################### set up drone connection
     # connection_string = 'tcp:127.0.0.1:5760'
