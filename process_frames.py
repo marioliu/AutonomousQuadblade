@@ -94,7 +94,7 @@ def main():
     '''
     import sys
     from Camera import camera
-    from Algorithms import adaptive_grid_sizing as ags
+    from Algorithms import discretize as ags
     from Algorithms import rbf_interpolation as rbfi
     from Algorithms import voronoi as voro
     from Algorithms import create_samples as cs
@@ -113,7 +113,7 @@ def main():
         print('Connected to R200 camera')
     elif argv[1] == 'data':
         print('Using data directory for frames')
-        source = './Camera/Sample_Data/frame_comparison'
+        source = './Camera/Sample_Data/two_boxes'
     else:
         print('Usage: python {0} [cam|data]'.format(argv[0]))
         exit(1)
@@ -121,12 +121,12 @@ def main():
     numFrames = 5
     # height_ratio of 1 keeps all rows of original image
     # default of h_r = 0.5, s_s = 0.3
-    height_ratio = 0.5
+    height_ratio = 1
     sub_sample = 0.3
     # reduce_to argument can be: 'lower', 'middle_lower', 'middle', 'middle_upper', and 'upper'
     reduce_to = 'middle'
-    sigma = 0.1
     iters = 2
+    perc_samples = 0.01
 
     print('Program settings:')
     print('\tsource: ' + str(source))
@@ -135,7 +135,6 @@ def main():
     print('\theight_ratio: ' + str(height_ratio))
     print('\tsub_sample: ' + str(sub_sample))
     print('\treduce_to: ' + reduce_to)
-    print('\tsigma: ' + str(sigma))
     print('\titers: ' + str(iters))
 
     #######################################################
@@ -159,25 +158,28 @@ def main():
     # regular cropping and resizing
     plot2(figs, d, d_small, 'Original', scaledTitle)
 
-    # adaptive grid sizing (recon)
+    # initial discretization
     t1 = time.time()
-    recon = ags.depthCompletion(d_small, sigma, iters)
+    recon = ags.depthCompletion(d_small, iters)
     t2 = time.time()
 
     print('Time to do AGS: ' + str(t2 - t1))
     print('')
-    plot2(figs, d_small, recon, scaledTitle, 'Adaptive Grid Sizing (AGS) (Recon)')
+    plot2(figs, d_small, recon, scaledTitle, 'Discretization')
 
     # use when rbf fails
-    raw_input('Press <Enter> to close all plots and exit')
-    return
+    # raw_input('Press <Enter> to close all plots and exit')
+    # return
     
     # radial basis function
     t1 = time.time()
-    samples, measured_vector = cs.createSamples(d_small, 0.01)
-    rbf = rbfi.interpolate(d_small.shape, samples, measured_vector)
+    samples, measured_vector = cs.createSamples(d_small, perc_samples)
+    try:
+        rbf = rbfi.interpolate(d_small.shape, samples, measured_vector)
+    except:
+        rbf = d_small
     t2 = time.time()
-    rbf_ags = ags.depthCompletion(rbf, sigma, iters)
+    rbf_ags = ags.depthCompletion(rbf, iters)
     t3 = time.time()
 
     print('Time to do RBF: ' + str(t2 - t1))
@@ -189,10 +191,13 @@ def main():
 
     # Voronoi interpolation
     t1 = time.time()
-    samples, measured_vector = cs.createSamples(d_small, 0.01)
-    v = voro.getVoronoi(d_small.shape, samples, measured_vector)
+    samples, measured_vector = cs.createSamples(d_small, perc_samples)
+    try:
+        v = voro.getVoronoi(d_small.shape, samples, measured_vector)
+    except:
+        v = d_small
     t2 = time.time()
-    voro_ags = ags.depthCompletion(v, sigma, iters)
+    voro_ags = ags.depthCompletion(v, iters)
     t3 = time.time()
 
     print('Time to do Voronoi: ' + str(t2 - t1))

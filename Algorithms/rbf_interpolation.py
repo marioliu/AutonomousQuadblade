@@ -55,37 +55,72 @@ def main():
     Unit tests
     '''
     from create_samples import createSamples
+    import sys
 
-    h = 6
-    w = 9
-    perc_samples = 1
+    h = 12
+    w = 16
+    perc_samples = 0.3
 
+    argv = sys.argv
+    np.random.seed(54)
     depth = np.zeros((h, w))
     depth.fill(np.nan)
-    for _ in range(int((h * w) / 3)):
+    for _ in range(int((h * w) * 0.4)):
         y, x = int(h * np.random.sample()), int(w * np.random.sample())
-        depth[y, x] = 4.0 * np.random.sample()
+        depth[y, x] = 6.0 * np.random.sample()
 
     t1 = time.time()
     samples, vec = createSamples(depth, perc_samples)
-    interpolated = interpolate(depth.shape, samples, vec)
+    linear = interpolate(depth.shape, samples, vec, ftype='linear')
     t2 = time.time()
+    thin_plate = interpolate(depth.shape, samples, vec, ftype='thin_plate')
+    gaussian = interpolate(depth.shape, samples, vec, ftype='gaussian')
+    multiquadric = interpolate(depth.shape, samples, vec, ftype='multiquadric')
+    inv_multiquadric = interpolate(depth.shape, samples, vec, ftype='inverse')
     print('Time to create samples and interpolate: ' + str(t2 - t1))
 
-    figsize = (6, 5.5)
-    plt.figure(figsize = figsize)
+    # figsize = (6, 2.5)
+    plt.figure()
 
-    plt.subplot(2, 1, 1)
-    plt.title('Original')
+    y = 1.2
+    plt.subplot(2, 3, 1)
+    plt.title('Original', y=y)
     plt.imshow(depth, cmap='plasma')
-    plt.colorbar()
+    plt.colorbar(fraction = 0.046, pad = 0.04)
     
-    plt.subplot(2, 1, 2)
-    plt.title('RBF Interpolated')
-    plt.imshow(interpolated, cmap='plasma')
-    plt.colorbar()
+    plt.subplot(2, 3, 2)
+    plt.title('Linear RBF', y=y)
+    plt.imshow(linear, cmap='plasma')
+    plt.colorbar(fraction = 0.046, pad = 0.04)
 
-    plt.subplots_adjust(hspace = 0.4)
+    plt.subplot(2, 3, 3)
+    plt.title('Thin Plate Spline RBF', y=y)
+    plt.imshow(thin_plate, cmap='plasma')
+    plt.colorbar(fraction = 0.046, pad = 0.04)
+
+    plt.subplot(2, 3, 4)
+    plt.title('Gaussian RBF', y=y)
+    plt.imshow(gaussian, cmap='plasma')
+    plt.colorbar(fraction = 0.046, pad = 0.04)
+    
+    plt.subplot(2, 3, 5)
+    plt.title('Multiquadric RBF', y=y)
+    plt.imshow(multiquadric, cmap='plasma')
+    plt.colorbar(fraction = 0.046, pad = 0.04)
+
+    plt.subplot(2, 3, 6)
+    plt.title('Inverse Multiquadric RBF', y=y)
+    plt.imshow(inv_multiquadric, cmap='plasma')
+    plt.colorbar(fraction = 0.046, pad = 0.04)
+
+    # plt.figure()
+    # x = range(h*w)
+    # flat = interpolated.copy()
+    # flat[1::2] = interpolated[1::2,::-1]
+    # flat = flat.ravel()
+    # plt.plot(x[0:w], flat[0:w])
+
+    plt.subplots_adjust(wspace = 0.6)
     plt.show()
 
 if __name__== "__main__":

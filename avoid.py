@@ -1,11 +1,11 @@
 '''
 Author: Mario Liu
-Description: Module to bring together and test all other modules.
+Description: Module to test the ODA algorithm.
 '''
 
 from Camera import camera
 from Algorithms import create_samples as cs
-from Algorithms import adaptive_grid_sizing as ags
+from Algorithms import discretize as ags
 from Algorithms import rbf_interpolation as rbfi
 from Algorithms import nav
 from process_frames import plot2
@@ -41,13 +41,13 @@ def send_ned_velocity(vehicle, velocity_x, velocity_y, velocity_z, duration):
         vehicle.send_mavlink(msg)
         time.sleep(1)
 
-def avoidObs(vehicle, cam, numFrames, height_ratio, sub_sample, reduce_to, nav, perc_samples, sigma, iters, min_dist):
+def avoidObs(vehicle, cam, numFrames, height_ratio, sub_sample, reduce_to, nav, perc_samples, iters, min_dist):
     t1 = time.time()
 
     d, c = cam.getFrames(numFrames, rgb=True)
     d_small = cam.reduceFrame(d, height_ratio = height_ratio, sub_sample = sub_sample, reduce_to = reduce_to)
 
-    adapted = nav.reconstructFrame(d_small, perc_samples, sigma, iters)
+    adapted = nav.reconstructFrame(d_small, perc_samples, iters, alg_type='voronoi')
     try:
         l = len(adapted)
     except:
@@ -58,7 +58,7 @@ def avoidObs(vehicle, cam, numFrames, height_ratio, sub_sample, reduce_to, nav, 
         pos = int(len(d_small[0]) / 2)
 
     frac = pos/float(len(d_small[0]))
-    print('pos = {0}, frac = {1}'.format(pos, frac))
+    print('Gap: pos = {0}, frac = {1}'.format(pos, frac))
 
     t2 = time.time()
 
@@ -84,10 +84,9 @@ def main():
     sub_sample = 0.3
     # reduce_to argument can be: 'lower', 'middle_lower', 'middle', 'middle_upper', and 'upper'
     reduce_to = 'middle'
-    perc_samples = 0.05
-    sigma = 0.2
+    perc_samples = 0.01
     iters = 2
-    min_dist = 2
+    min_dist = 1
     debug = False
 
     print('Program settings:')
@@ -98,7 +97,6 @@ def main():
     print('\tsub_sample: ' + str(sub_sample))
     print('\treduce_to: ' + reduce_to)
     print('\tperc_samples: ' + str(perc_samples))
-    print('\tsigma: ' + str(sigma))
     print('\titers: ' + str(iters))
     print('\tmin_dist: ' + str(min_dist))
     print('\tdebug: ' + str(debug))
@@ -106,46 +104,49 @@ def main():
     n = nav.Navigation(debug)
     #########################
 
-    ######################### set up drone connection
-    connection_string = 'tcp:127.0.0.1:5760'
-    vehicle = connect(connection_string, wait_ready=False)
-    # set home to current position (to hopefully make alt >= 0)
-    vehicle.home_location = vehicle.location.global_frame
-    MAV_MODE = 8
-    # change to MAV_MODE mode
-    md.PX4setMode(vehicle, MAV_MODE)
-    time.sleep(1)
-    print('Mode: ' + str(vehicle.mode.name))
-    #########################
-
-    # arm vehicle
-    print('Arming drone...')
-    vehicle.armed = True
-
-    try:
-        while True:
-            # avoidObs(vehicle, cam, numFrames, height_ratio, sub_sample, reduce_to, n, perc_samples, sigma, iters, min_dist)
-            print('Going up...')
-            send_ned_velocity(vehicle, 0, 0, -1, 4)
-            print('Holding...')
-            send_ned_velocity(vehicle, 0, 0, 0, 2)
-            print('Going down...')
-            send_ned_velocity(vehicle, 0, 0, 1, 4)
-            print('Holding...')
-            send_ned_velocity(vehicle, 0, 0, 0, 2)
-            print('Disarming...')
-            vehicle.armed = False
-            time.sleep(1)
-            return
-    except KeyboardInterrupt:
-        # disarm vehicle
-        print('Disarming drone...')
-        vehicle.armed = False
+    while True:
+        avoidObs(vehicle, cam, numFrames, height_ratio, sub_sample, reduce_to, n, perc_samples, iters, min_dist)
         time.sleep(1)
+    
+    # ######################### set up drone connection
+    # connection_string = 'tcp:127.0.0.1:5760'
+    # vehicle = connect(connection_string, wait_ready=False)
+    # # set home to current position (to hopefully make alt >= 0)
+    # vehicle.home_location = vehicle.location.global_frame
+    # MAV_MODE = 8
+    # # change to MAV_MODE mode
+    # md.PX4setMode(vehicle, MAV_MODE)
+    # time.sleep(1)
+    # print('Mode: ' + str(vehicle.mode.name))
+    # #########################
 
-        # close vehicle object before exiting script
-        vehicle.close()
-        time.sleep(1)
+    # # arm vehicle
+    # print('Arming drone...')
+    # vehicle.armed = True
+
+    # try:
+    #     while True:
+    #         print('Going up...')
+    #         send_ned_velocity(vehicle, 0, 0, -1, 4)
+    #         print('Holding...')
+    #         send_ned_velocity(vehicle, 0, 0, 0, 2)
+    #         print('Going down...')
+    #         send_ned_velocity(vehicle, 0, 0, 1, 4)
+    #         print('Holding...')
+    #         send_ned_velocity(vehicle, 0, 0, 0, 2)
+    #         print('Disarming...')
+    #         vehicle.armed = False
+    #         time.sleep(1)
+    #         return
+    # except KeyboardInterrupt:
+    #     # disarm vehicle
+    #     print('Disarming drone...')
+    #     vehicle.armed = False
+    #     time.sleep(1)
+
+    #     # close vehicle object before exiting script
+    #     vehicle.close()
+    #     time.sleep(1)
 
 if __name__ == "__main__":
     try:

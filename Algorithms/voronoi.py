@@ -89,15 +89,15 @@ def main():
     import time
     from create_samples import createSamples
 
-    h = 6
-    w = 9
-    perc_samples = 1
+    h = 12
+    w = 16
+    perc_samples = 0.3
 
     depth = np.zeros((h, w))
     depth.fill(np.nan)
-    for _ in range(int((h * w) / 3)):
+    for _ in range(int((h * w) * 0.4)):
         y, x = int(h * np.random.sample()), int(w * np.random.sample())
-        depth[y, x] = 4.0 * np.random.sample()
+        depth[y, x] = 6.0 * np.random.sample()
 
     t1 = time.time()
     samples, vec = createSamples(depth, perc_samples)
@@ -105,20 +105,27 @@ def main():
     t2 = time.time()
     print('Time to create samples and get Voronoi: ' + str(t2 - t1))
 
-    figsize = (6, 5.5)
+    figsize = (6, 2.5)
     plt.figure(figsize = figsize)
 
-    plt.subplot(2, 1, 1)
+    plt.subplot(1, 2, 1)
     plt.title('Original')
     plt.imshow(depth, cmap='plasma')
-    plt.colorbar()
+    plt.colorbar(fraction = 0.046, pad = 0.04)
     
-    plt.subplot(2, 1, 2)
-    plt.title('Voronoi Regions')
+    plt.subplot(1, 2, 2)
+    plt.title('Natural Neighbor')
     plt.imshow(interpolated, cmap='plasma')
-    plt.colorbar()
+    plt.colorbar(fraction = 0.046, pad = 0.04)
 
-    plt.subplots_adjust(hspace = 0.4)
+    # plt.figure()
+    # x = range(h*w)
+    # flat = interpolated.copy()
+    # flat[1::2] = interpolated[1::2,::-1]
+    # flat = flat.ravel()
+    # plt.plot(x[0:w], flat[0:w])
+
+    plt.subplots_adjust(wspace = 0.3)
     plt.show()
 
 if __name__ == "__main__":

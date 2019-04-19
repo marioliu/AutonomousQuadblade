@@ -70,27 +70,30 @@ def createSamples(depth, perc_samples):
 def main():
     import matplotlib.pyplot as plt
 
-    h = 6
-    w = 9
-    perc_samples = 0.5
+    h = 480
+    w = 640
+    perc_samples = 1
 
     depth = np.zeros((h, w))
     depth.fill(np.nan)
-    for _ in range(int((h * w) / 3)):
+    for _ in range(int((h * w) * 0.4)):
         y, x = int(h * np.random.sample()), int(w * np.random.sample())
-        depth[y, x] = 4.0 * np.random.sample()
+        depth[y, x] = 6.0 * np.random.sample()
+    nonNan = depth[~np.isnan(depth)]
 
     t1 = time.time()
     samples, vec = createSamples(depth, perc_samples)
     t2 = time.time()
     print('Sampling fraction: ' + str(perc_samples))
     print('Time to create samples: ' + str(t2 - t1))
+    print('frac of samples: ' + str(len(samples)/float(len(nonNan))))
+    return
     print('samples: ' + str(samples))
     print('vec: ' + str(vec))
 
     plt.figure()
 
-    plt.title('Samples')
+    plt.title('Samples ({0}% of All Pixels)'.format(perc_samples * 100))
     plt.imshow(depth, cmap='plasma')
     plt.colorbar()
 
@@ -98,7 +101,8 @@ def main():
     for samp in samples:
         x = samp % w
         y = samp / w
-        plt.plot(x, y, 'ro', markersize=10)
+        plt.plot(x, y, 'wo', markersize=5)
+        plt.plot(x, y, 'ro', markersize=3)
 
     plt.show()
 

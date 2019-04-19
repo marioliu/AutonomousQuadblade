@@ -1,65 +1,44 @@
 '''
+Author: Mario Liu
 Adapted from https://github.com/IntelligentQuadruped, with permission
-Description: Fills in gaps in the R200 depth camera output.
-'''
-'''
-Performance: Number of calculations increase as set standard-deviation
-(SIGMA) parameter decreases. A sigma of 450 allows a depth inaccuracy of
-45cm.
+Description: Fills in gaps in the R200 depth camera output. Discretizes
+a depth matrix.
 '''
 
 import numpy as np
 import matplotlib.pyplot as plt
 
-def _setSigma(matrix, num=2):
-    """
-    Sets starting sigma value by interpolating from emperically
-    determined data from R200 camera. 
-
-    Default is a 3 sigma to get 95% of the values. 
-    """
-    x = matrix[matrix > 0].mean()
-    a, b = [0.07064656, -0.03890366]
-    sigma = a*x + b
-    return num*round(sigma, 3)
-
 def _split(matrix):
     """
-    Splits matrix into 6 equally sized rectangles:
-    upper {left|middle|right} and lower {left|middle|right}.
+    Splits matrix into 4 equally sized rectangles:
+    upper {left|right} and lower {left|right}.
 
     Arg:
         matrix: NumPy 2D depth matrix
     Returns:
-        6 matrices in list
+        4 matrices in list
     """
     h, w = matrix.shape
-    h_prime = int(h/2)
-    w_prime = int(w/3)
+    h_prime = int(h/2.0)
+    w_prime = int(w/2.0)
 
     # quarter matrices
     upper_left = matrix[:h_prime, :w_prime]
-    upper_middle = matrix[:h_prime, w_prime:2*w_prime]
-    upper_right = matrix[:h_prime, 2*w_prime:w]
+    upper_right = matrix[:h_prime, w_prime:]
     lower_left = matrix[h_prime:, :w_prime]
-    lower_middle = matrix[h_prime:, w_prime:2*w_prime]
-    lower_right = matrix[h_prime:, 2*w_prime:w]
+    lower_right = matrix[h_prime:, w_prime:]
 
-    return [upper_left, upper_middle, upper_right,\
-        lower_left, lower_middle, lower_right]
+    return [upper_left, upper_right,\
+        lower_left, lower_right]
 
-def _average(matrix, sigma, iters):
+def _average(matrix, iters):
     """
     Assigns mean of all non-zero/non-NaN values to each gridcell given
-    that the standard deviation is within bounds and the blocks are
-    smaller than the maximum allowable block height. Inaccuracy is likely
-    around 10%, sigma of up to 500, when images include multiple objects
-    of different depths close together.
+    that the blocks are smaller than the maximum allowable block height.
 
     Args:
         matrix: NumPy 2D depth matrix
-        sigma: Threshold value for standard deviation
-        iters: Divides matrix into a maximum of 2^iters vertical blocks
+        iters: Divides matrix into 4^iters equally-sized blocks
         by subdividing matrix into halves with each successive iter.
         (e.g. iter = 1, matrix is split in half; iter = 2, matrix is
         split into quarters)
@@ -72,14 +51,13 @@ def _average(matrix, sigma, iters):
     if len(nonNans) == 0:
         return matrix
 
-    # if depth values are all too different
-    if nonNans.std() > sigma and iters > 0:
+    if iters > 0:
         submatrices = _split(matrix)
         for i, submatrix in enumerate(submatrices):
-            submatrices[i] = _average(submatrix, sigma, iters - 1)
+            submatrices[i] = _average(submatrix, iters - 1)
         
-        row1 = np.hstack((submatrices[0],submatrices[1],submatrices[2]))
-        row2 = np.hstack((submatrices[3],submatrices[4],submatrices[5]))
+        row1 = np.hstack((submatrices[0],submatrices[1]))
+        row2 = np.hstack((submatrices[2],submatrices[3]))
 
         stacked = np.vstack((row1, row2))
 
@@ -136,7 +114,7 @@ def _cleanup(matrix, n):
     
     return matrix
 
-def depthCompletion(d, min_sigma, iters):
+def depthCompletion(d, iters):
     """
     Manages the appropriate sequence of completion steps to determine a
     depth estimate for each matrix entry.
@@ -144,24 +122,22 @@ def depthCompletion(d, min_sigma, iters):
     Args:
         matrix: Depth values as NumPy array
         min_sigma: Acceptable deviation within calculated depth fields
-        iters: Divides matrix into a maximum of 2^iters vertical blocks
+        iters: Divides matrix into a 4^iters equally-sized blocks
         by subdividing matrix into halves with each successive iter.
         (e.g. iter = 1, matrix is split in half; iter = 2, matrix is
         split into quarters)
     """
-
-    # Reduces outliers to a maximum value of 4.0 which is the max
-    # sensitivity value of the R200 depth sensors.
-
+    if iters < 0:
+        print('iters cannot be negative!')
+        exit(1)
+    
     depth = d.copy()
-    # std = _setSigma(matrix)
-    # min_sigma = std if min_sigma < std else min_sigma
     
     h = len(depth) / (2 ** iters)
     # catches the case where subdivisions get too small
     if h < 1:
         h = 1
-    avg = _average(depth, min_sigma, iters)
+    avg = _average(depth, iters)
     clean = _cleanup(avg, h)
 
     return clean
@@ -170,30 +146,26 @@ if __name__ == "__main__":
     """
     Application example with visualization.
     """
-    h = 6
-    w = 9
+    h = 12
+    w = 16
 
-    depth = 4 * np.random.rand(h, w)
-    for _ in range(6):
-        y, x = int(h * np.random.sample()), int(w * np.random.sample())
-        depth[y, x] = np.nan
+    depth = 6.0 * np.random.rand(h, w)
+    dep_comp = depthCompletion(depth, 3)
 
-    dep_comp = depthCompletion(depth, .01, 8)
-
-    figsize = (6, 5.5)
+    figsize = (6, 2.5)
     plt.figure(figsize = figsize)
 
-    plt.subplot(2, 1, 1)
+    plt.subplot(1, 2, 1)
     plt.title('Original')
     plt.imshow(depth, cmap='plasma')
-    plt.colorbar()
+    plt.colorbar(fraction = 0.046, pad = 0.04)
 
-    plt.subplot(2, 1, 2)
-    plt.title('Filled-In Matrix')
+    plt.subplot(1, 2, 2)
+    plt.title('Discretization')
     plt.imshow(dep_comp, cmap='plasma')
-    plt.colorbar()
+    plt.colorbar(fraction = 0.046, pad = 0.04)
 
-    plt.subplots_adjust(hspace = 0.4)
+    plt.subplots_adjust(wspace = 0.3)
     plt.show()
 
 else:

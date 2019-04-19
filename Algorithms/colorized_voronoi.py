@@ -91,8 +91,8 @@ def voronoi_finite_polygons_2d(vor, radius=None):
 
 def main():
     # make up data points
-    np.random.seed(1234)
-    points = np.random.rand(15, 2)
+    # np.random.seed(1234)
+    points = 10 * np.random.rand(20, 2)
 
     # compute Voronoi tesselation
     vor = Voronoi(points)
@@ -107,12 +107,14 @@ def main():
     # colorize
     for region in regions:
         polygon = vertices[region]
-        plt.fill(*zip(*polygon), alpha=0.4)
+        plt.fill(*zip(*polygon), alpha=0.7)
 
     plt.plot(points[:,0], points[:,1], 'ko')
     plt.axis('equal')
     plt.xlim(vor.min_bound[0] - 0.1, vor.max_bound[0] + 0.1)
     plt.ylim(vor.min_bound[1] - 0.1, vor.max_bound[1] + 0.1)
+    plt.title('Voronoi Tessellation')
+    plt.grid()
 
     plt.show()
 

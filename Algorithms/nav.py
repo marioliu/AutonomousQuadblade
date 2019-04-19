@@ -6,7 +6,7 @@ move in.
 import numpy as np
 from scipy import sparse
 import matplotlib.pyplot as plt
-import adaptive_grid_sizing as ags
+import discretize as ags
 import voronoi
 import rbf_interpolation as rbfi
 from create_samples import createSamples
@@ -25,7 +25,7 @@ class Navigation:
         """
         self.debug = debug
 
-    def reconstructFrame(self, depth, perc_samples=0.01, min_sigma=0.2, iters=2, alg_type='rbf'):
+    def reconstructFrame(self, depth, perc_samples=0.01, iters=2, alg_type='rbf'):
         """
         Given a partial depth image, will return a reconstructed version filling
         in all missing data.
@@ -46,7 +46,7 @@ class Navigation:
             print('Specify an alg_type in nav.reconstructFrame()')
             exit(1)
 
-        adapted = ags.depthCompletion(filled, min_sigma, iters)
+        adapted = ags.depthCompletion(filled, iters)
 
         if self.debug:
             sample_img = np.zeros((depth.shape)).flatten()
