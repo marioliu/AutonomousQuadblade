@@ -1,6 +1,6 @@
 '''
 Author: Mario Liu
-Description: Module to test the ODA algorithm.
+Description: Module to test the ODA algorithm and targeted landing.
 '''
 
 from Camera import camera

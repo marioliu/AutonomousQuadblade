@@ -70,9 +70,9 @@ def createSamples(depth, perc_samples):
 def main():
     import matplotlib.pyplot as plt
 
-    h = 480
-    w = 640
-    perc_samples = 1
+    h = 12
+    w = 16
+    perc_samples = 0.5
 
     depth = np.zeros((h, w))
     depth.fill(np.nan)
@@ -87,7 +87,6 @@ def main():
     print('Sampling fraction: ' + str(perc_samples))
     print('Time to create samples: ' + str(t2 - t1))
     print('frac of samples: ' + str(len(samples)/float(len(nonNan))))
-    return
     print('samples: ' + str(samples))
     print('vec: ' + str(vec))
 

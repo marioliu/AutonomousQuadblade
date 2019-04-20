@@ -7,7 +7,6 @@ from Camera import camera
 from Algorithms import create_samples as cs
 from Algorithms import discretize as disc
 from Algorithms import rbf_interpolation as rbfi
-from Algorithms import nav
 from process_frames import plot2
 from process_frames import getFramesFromSource
 
