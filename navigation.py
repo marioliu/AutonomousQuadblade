@@ -42,6 +42,8 @@ def send_ned_velocity(vehicle, velocity_x, velocity_y, velocity_z, duration):
         time.sleep(1)
 
 def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, perc_samples, iters, min_dist, DEBUG=False):
+    print('COMMAND: Get drone\'s displacement from target.')
+    print('\tIf close to target, land and return. If not, continue.')
     # d = cam.getFrames(numFrames, rgb=False)
 
     # source = './Camera/Sample_Data/two_boxes'
@@ -66,18 +68,20 @@ def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, perc_samples, 
     x = gd.findLargestGap(d, min_dist, DEBUG=DEBUG)
 
     t2 = time.time()
-    print('t to process: {0}'.format(t2 - t1))
+    print('COMMAND: Rotate drone to face target.')
+    print('COMMAND: Get depth data from R200.')
+    print('time to do gap detection: {0}'.format(t2 - t1))
 
     if x == None:
         x = len(d[0]) // 2
     f = float(x)/len(d[0])
-    print('(frac, position) of gap: ({0}, {1})'.format(f, x))
+    print('(f, position) of gap: ({0}, {1})'.format(f, x))
 
     delTheta = f * 59 - 29.5
     if f == 0.5:
-        print('COMMAND: Move forward until an obstacle is detected\n')
+        print('COMMAND: Move forward.\n')
     else:
-        print('COMMAND: Rotate drone {0} degrees and move forward until obstacle is cleared\n'.format(delTheta))
+        print('COMMAND: Rotate drone {0} degrees and move forward until obstacle is cleared.\n'.format(delTheta))
 
     plt.figure()
     plt.imshow(d, cmap='plasma')
