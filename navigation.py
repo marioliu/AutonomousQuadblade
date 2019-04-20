@@ -10,7 +10,7 @@ from Algorithms import voronoi as voronoi
 from Algorithms import gap_detection as gd
 from process_frames import plot2
 from Drone_Control import mission_move_drone as md
-from Drone_Control import piksi
+from process_frames import getFramesFromSource
 
 import matplotlib.pyplot as plt
 import time
@@ -42,7 +42,15 @@ def send_ned_velocity(vehicle, velocity_x, velocity_y, velocity_z, duration):
         time.sleep(1)
 
 def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, perc_samples, iters, min_dist, DEBUG=False):
-    d = cam.getFrames(numFrames, rgb=False)
+    # d = cam.getFrames(numFrames, rgb=False)
+
+    # source = './Camera/Sample_Data/two_boxes'
+    # d, c = getFramesFromSource(source)
+
+    # generate representative depth matrix
+    h = 12
+    w = 16
+    d = 6.0 * np.random.rand(h, w)
 
     t1 = time.time()
 
@@ -58,15 +66,22 @@ def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, perc_samples, 
     x = gd.findLargestGap(d, min_dist, DEBUG=DEBUG)
 
     t2 = time.time()
-    print('t: {0}'.format(t2 - t1))
+    print('t to process: {0}'.format(t2 - t1))
 
     if x == None:
         x = len(d[0]) // 2
-    print('(frac, position) of gap: ({0}, {1})\n'.format(float(x)/len(d[0]), x))
+    f = float(x)/len(d[0])
+    print('(frac, position) of gap: ({0}, {1})'.format(f, x))
+
+    delTheta = f * 59 - 29.5
+    if f == 0.5:
+        print('COMMAND: Move forward until an obstacle is detected\n')
+    else:
+        print('COMMAND: Rotate drone {0} degrees and move forward until obstacle is cleared\n'.format(delTheta))
 
     plt.figure()
     plt.imshow(d, cmap='plasma')
-    plt.title('Gap Detection')
+    plt.title('Navigation')
     plt.colorbar(fraction = 0.046, pad = 0.04)
     plt.plot([x, x], [len(d)-1, len(d)//2], 'r-', LineWidth=5)
     plt.plot([x, x], [len(d)-1, len(d)//2], 'w-', LineWidth=2)
@@ -92,11 +107,12 @@ def main():
     numFrames = 5
     # height_ratio of 1 keeps all rows of original image
     # default of h_r = 0.5, s_s = 0.3
-    height_ratio = 0.5
-    sub_sample = 0.3
+    height_ratio = 1
+    sub_sample = 1
     # reduce_to argFalseument can be: 'lower', 'middle_lower', 'middle', 'middle_upper', and 'upper'
     reduce_to = 'middle'
-    perc_samples = 0.01
+    # default of perc_samples = 0.01
+    perc_samples = 1
     iters = 3
     min_dist = 1
     debug = False
