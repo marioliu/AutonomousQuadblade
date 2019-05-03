@@ -41,7 +41,7 @@ def send_ned_velocity(vehicle, velocity_x, velocity_y, velocity_z, duration):
         vehicle.send_mavlink(msg)
         time.sleep(1)
 
-def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, perc_samples, iters, min_dist, DEBUG=False):
+def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, perc_samples, iters, min_dist):
     print('COMMAND: Get drone\'s displacement from target.')
     print('\tIf close to target, land and return. If not, continue.')
     # d = cam.getFrames(numFrames, rgb=False)
@@ -65,7 +65,7 @@ def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, perc_samples, 
         v = d_small
     d = disc.depthCompletion(v, iters)
 
-    x = gd.findLargestGap(d, min_dist, DEBUG=DEBUG)
+    x = gd.findLargestGap(d, min_dist)
 
     t2 = time.time()
     print('COMMAND: Rotate drone to face target.')
@@ -84,6 +84,12 @@ def avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, perc_samples, 
         print('COMMAND: Rotate drone {0} degrees and move forward until obstacle is cleared.\n'.format(delTheta))
 
     plt.figure()
+    plt.subplot(1, 2, 1)
+    plt.imshow(d > min_dist)
+    plt.title('Obstacles (Shaded)')
+    plt.grid()
+
+    plt.subplot(1, 2, 2)
     plt.imshow(d, cmap='plasma')
     plt.title('Navigation')
     plt.colorbar(fraction = 0.046, pad = 0.04)
@@ -116,10 +122,9 @@ def main():
     # reduce_to argFalseument can be: 'lower', 'middle_lower', 'middle', 'middle_upper', and 'upper'
     reduce_to = 'middle'
     # default of perc_samples = 0.01
-    perc_samples = 1
+    perc_samples = 0.05
     iters = 3
-    min_dist = 1
-    debug = False
+    min_dist = 1.0
 
     print('Program settings:')
     print('\tsource: ' + str(source))
@@ -131,11 +136,10 @@ def main():
     print('\tperc_samples: ' + str(perc_samples))
     print('\titers: ' + str(iters))
     print('\tmin_dist: ' + str(min_dist))
-    print('\tdebug: ' + str(debug))
 
     #########################
     while True:
-        avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, perc_samples, iters, min_dist, DEBUG=debug)
+        avoidObs(cam, numFrames, height_ratio, sub_sample, reduce_to, perc_samples, iters, min_dist)
     
     # ######################### set up drone connection
     # connection_string = 'tcp:127.0.0.1:5760'

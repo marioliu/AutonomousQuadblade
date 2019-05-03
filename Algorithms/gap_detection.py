@@ -56,7 +56,7 @@ def __addNextRow(row, start, finish, data):
         return
 
     args = np.argwhere(data.row_i == row)
-    
+
     for i in args:
         s = start
         f = finish
@@ -72,7 +72,7 @@ def __addNextRow(row, start, finish, data):
 
     return
 
-def findLargestGap(depth_og, min_dist, barrier_h=.5, min_gap=0, DEBUG=False):
+def findLargestGap(depth_og, min_dist, barrier_h=0, min_gap=0):
     """
     Given depth image, find the largest gap that goes from the bottom of
     the image to the top. Use min_dist as threshold below which objects are 
@@ -101,13 +101,6 @@ def findLargestGap(depth_og, min_dist, barrier_h=.5, min_gap=0, DEBUG=False):
     if sf[1] - sf[0] < min_gap:
         return None
 
-    if DEBUG:
-        plt.figure(figsize = (6, 2.5))
-        plt.subplot(1, 2, 1)
-        plt.imshow(depth)
-        plt.title('Obstacles')
-        plt.grid()
-
     return (sf[0]+sf[1])/2.
 
 def main():
@@ -123,6 +116,7 @@ def main():
     w = 16
     perc_samples = 0.3
     iters = 3
+    min_dist = 1.0
 
     depth = 6.0 * np.random.rand(h, w)
     for _ in range(int((h * w) * 0.6)):
@@ -133,20 +127,24 @@ def main():
     v = voronoi.getVoronoi(depth.shape, samples, measured_vector)
     d = disc.depthCompletion(v, iters)
 
-    x = findLargestGap(d, 1, DEBUG=True)
-    print('(frac, position) of gap: ({0}, {1})'.format(float(x)/len(d[0]), x))
+    x = findLargestGap(d, min_dist)
     if x == None:
+        print('no gap found')
         x = len(d[0]) // 2
+    print('(frac, position) of gap: ({0}, {1})'.format(float(x)/len(d[0]), x))
+
+    plt.figure()
+    plt.subplot(1, 2, 1)
+    plt.imshow(d > min_dist)
+    plt.title('Obstacles (Shaded)')
+    plt.grid()
 
     plt.subplot(1, 2, 2)
     plt.imshow(d, cmap='plasma')
     plt.title('Gap Detection')
     plt.colorbar(fraction = 0.046, pad = 0.04)
-    plt.plot([x, x], [len(d)-1, len(d)//2], 'r-', LineWidth=5)
-    plt.plot([x, x], [len(d)-1, len(d)//2], 'w-', LineWidth=2)
-    for i in range(len(d)//2, len(d)):
-        plt.plot(int(x), i, 'wo', markersize=5)
-        plt.plot(int(x), i, 'ro', markersize=3)
+    plt.plot([x, x], [len(d)-1, 0], 'r-', LineWidth=5)
+    plt.plot([x, x], [len(d)-1, 0], 'w-', LineWidth=2)
     
     plt.subplots_adjust(wspace = 0.3)
 
